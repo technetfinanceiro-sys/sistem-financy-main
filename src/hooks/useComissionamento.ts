@@ -192,23 +192,23 @@ export function useComissionamento() {
   // "Frentes" agora = consolidado por favorecido
   const frentesData = useMemo<FrenteKPIData[]>(() => {
     const totalGeralValor = filteredData.reduce((s, r) => s + (r.valor || 0), 0);
-    const map = new Map<string, { qtd: number; valor: number; unidade: string; centroCusteio: string }>();
+    const map = new Map<string, { qtd: number; valor: number; unidade: string; centroCusteio: string; favorecidos: Set<string> }>();
     filteredData.forEach(r => {
-      const k = r.favorecido || '';
-      if (!k) return;
-      if (!map.has(k)) map.set(k, { qtd: 0, valor: 0, unidade: r.unidade || '', centroCusteio: r.centro_custeio || '' });
+      const k = r.categoria || 'Sem Categoria';
+      if (!map.has(k)) map.set(k, { qtd: 0, valor: 0, unidade: r.unidade || '', centroCusteio: r.centro_custeio || '', favorecidos: new Set() });
       const it = map.get(k)!;
       it.qtd += 1;
       it.valor += r.valor || 0;
+      if (r.favorecido) it.favorecidos.add(r.favorecido);
     });
     return Array.from(map.entries())
-      .map(([favorecido, g]) => ({
-        frente: favorecido,
+      .map(([categoria, g]) => ({
+        frente: categoria,
         qtdConsultivo: g.qtd,
         totalGeral: g.qtd,
         pctConfirmada: totalGeralValor > 0 ? (g.valor / totalGeralValor) * 100 : 0,
-        totalTecnicos: 1,
-        tecAdherente: 1,
+        totalTecnicos: g.favorecidos.size,
+        tecAdherente: g.favorecidos.size,
         pctTecAdherente: 100,
         tecNaoVenderam: [],
         totalValor: g.valor,

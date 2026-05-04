@@ -1,10 +1,12 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Label } from '@/components/ui/label';
 import { ComissionamentoFilters as FiltersType, LancamentoPix, OpcaoSelect } from '@/types/comissionamento';
-import { X, FileEdit, Download } from 'lucide-react';
+import { X, FileEdit, Download, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ComissionamentoFormDialog } from './ComissionamentoFormDialog';
 import * as XLSX from 'xlsx';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 interface OpcoesData {
   cnpj: OpcaoSelect[];
@@ -146,7 +148,107 @@ export const ComissionamentoFilters: React.FC<Props> = ({
     XLSX.utils.book_append_sheet(wb, ws, 'Lancamentos PIX');
     XLSX.writeFile(wb, 'lancamentos_pix.xlsx');
   };
+  const handleGerarDRE = () => {
+    const fmtBRL = (v: number) =>
+      `R$ ${v.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
+    // Agrupa despesas por categoria
+    const map = new Map<string, { qtd: number; valor: number }>();
+    let totalDespesas = 0;
+    filteredData.forEach(r => {
+      const k = r.categoria || 'Sem Categoria';
+      if (!map.has(k)) map.set(k, { qtd: 0, valor: 0 });
+      const it = map.get(k)!;
+      it.qtd += 1;
+      it.valor += r.valor || 0;
+      totalDespesas += r.valor || 0;
+    });
+    const linhas = Array.from(map.entries())
+      .map(([cat, v]) => ({ cat, qtd: v.qtd, valor: v.valor, pct: totalDespesas > 0 ? (v.valor / totalDespesas) * 100 : 0 }))
+      .sort((a, b) => b.valor - a.valor);
+
+    // Período (a partir dos filtros ou do range dos dados)
+    const datas = filteredData.map(r => r.data_lancamento).filter(Boolean) as string[];
+    const minData = filters.dataInicio || (datas.length ? datas.reduce((a, b) => a < b ? a : b) : '');
+    const maxData = filters.dataFim || (datas.length ? datas.reduce((a, b) => a > b ? a : b) : '');
+    const fmtD = (s: string) => {
+      const m = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+      return m ? `${m[3]}/${m[2]}/${m[1]}` : s;
+    };
+
+    const doc = new jsPDF();
+    const pageW = doc.internal.pageSize.getWidth();
+    // DRE NOmes
+    doc.setFontSize(18);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Demonstração do Resultado do Exercício (DRE)', pageW / 2, 18, { align: 'center' });
+
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    const periodo = minData && maxData
+      ? `Período: ${fmtD(minData)} a ${fmtD(maxData)}`
+      : 'Período: todos os lançamentos';
+    doc.text(periodo, pageW / 2, 26, { align: 'center' });
+    doc.text(`Gerado em: ${new Date().toLocaleString('pt-BR')}`, pageW / 2, 32, { align: 'center' });
+
+    // Receita Bruta (placeholder - aba futura)
+    doc.setFontSize(11);
+    doc.setFont('helvetica', 'bold');
+    doc.text('(+) Receita Bruta', 14, 44);
+    doc.setFont('helvetica', 'normal');
+    doc.text('R$ 0,00', pageW - 14, 44, { align: 'right' });
+    doc.setFontSize(8);
+    doc.setTextColor(120);
+    doc.text('Aguardando aba de Receitas (a ser adicionada)', 14, 49);
+    doc.setTextColor(0);
+
+    // Despesas detalhadas
+    autoTable(doc, {
+      startY: 56,
+      head: [['(-) Despesas por Categoria', 'Qtd', 'Valor (R$)', '% Despesas']],
+      body: linhas.map(l => [
+        l.cat,
+        String(l.qtd),
+        fmtBRL(l.valor),
+        `${l.pct.toFixed(2)}%`,
+      ]),
+      foot: [[
+        'TOTAL DE DESPESAS',
+        String(filteredData.length),
+        fmtBRL(totalDespesas),
+        '100,00%',
+      ]],
+      theme: 'striped',
+      headStyles: { fillColor: [220, 53, 69], textColor: 255, fontStyle: 'bold' },
+      footStyles: { fillColor: [40, 40, 40], textColor: 255, fontStyle: 'bold' },
+      styles: { fontSize: 9, cellPadding: 3 },
+      columnStyles: {
+        1: { halign: 'center' },
+        2: { halign: 'right' },
+        3: { halign: 'right' },
+      },
+    });
+
+    // Resultado
+    // @ts-expect-error - lastAutoTable is added by jspdf-autotable at runtime
+    const finalY = doc.lastAutoTable.finalY + 10;
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'bold');
+    doc.text('(=) Resultado do Exercício', 14, finalY);
+    doc.setTextColor(220, 53, 69);
+    doc.text(`-${fmtBRL(totalDespesas)}`, pageW - 14, finalY, { align: 'right' });
+    doc.setTextColor(0);
+
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'italic');
+    doc.setTextColor(120);
+    doc.text(
+      'Observação: este DRE considera apenas despesas. As receitas serão integradas em versão futura.',
+      14, finalY + 8
+    );
+
+    doc.save(`DRE_${new Date().toISOString().slice(0, 10)}.pdf`);
+  };
   return (
     <div className="card">
       <div className="flex flex-wrap justify-between items-center mb-4 gap-3">
@@ -158,6 +260,16 @@ export const ComissionamentoFilters: React.FC<Props> = ({
           {/* <Button variant="outline" size="sm" onClick={handleExportExcel} disabled={filteredData.length === 0} className="gap-1">
             <Download className="w-4 h-4" /> Exportar Excel
           </Button> */}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleGerarDRE}
+            disabled={filteredData.length === 0}
+            className="gap-1 border-accent/40 text-accent hover:bg-accent/10"
+            title="Demonstração do Resultado do Exercício"
+          >
+            <FileText className="w-4 h-4" /> Gerar DRE
+          </Button>
           <span className="text-sm text-muted-foreground">
             Total: <strong className="text-foreground">{totalFiltered}</strong> registros
           </span>
@@ -239,7 +351,7 @@ export const ComissionamentoFilters: React.FC<Props> = ({
           onChange={(val) => setFilters({ centroCusteio: val })}
         />
 
-        <div className="form-group">
+        {/* <div className="form-group">
           <Label className="form-label">Descrição</Label>
           <input
             type="text"
@@ -248,7 +360,7 @@ export const ComissionamentoFilters: React.FC<Props> = ({
             value={filters.descricao}
             onChange={e => setFilters({ descricao: e.target.value })}
           />
-        </div>
+        </div> */}
       </div>
     </div>
   );

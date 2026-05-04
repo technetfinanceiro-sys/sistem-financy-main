@@ -1,6 +1,6 @@
 import React from 'react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend, LabelList } from 'recharts';
-import { Users, Building2, Banknote } from 'lucide-react';
+import { Tags, Building2, Banknote, Users } from 'lucide-react';
 import { FrenteKPIData } from '@/types/comissionamento';
 
 interface Props {
@@ -17,7 +17,7 @@ export const ComissionamentoFrentes: React.FC<Props> = ({ frentesData, selectedF
     : frentesData;
 
   const chartData = displayData.slice(0, 15).map(f => ({
-    favorecido: f.frente,
+    categoria: f.frente,
     valor: f.totalValor || 0,
     qtd: f.qtdConsultivo,
   }));
@@ -29,7 +29,7 @@ export const ComissionamentoFrentes: React.FC<Props> = ({ frentesData, selectedF
         {displayData.map(f => (
           <div key={f.frente} className="card space-y-3">
             <h4 className="text-sm font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-2">
-              <Users className="w-4 h-4 text-accent" />
+              <Tags className="w-4 h-4 text-accent" />
               <span className="truncate" title={f.frente}>{f.frente}</span>
             </h4>
 
@@ -39,15 +39,21 @@ export const ComissionamentoFrentes: React.FC<Props> = ({ frentesData, selectedF
                 <div className="text-2xl font-black text-accent">{fmtBRL(f.totalValor || 0)}</div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3 pt-2 border-t border-border">
+              <div className="grid grid-cols-3 gap-3 pt-2 border-t border-border">
                 <div>
                   <div className="text-xs text-muted-foreground flex items-center gap-1">
-                    <Banknote className="w-3 h-3" /> Lançamentos
+                    <Banknote className="w-3 h-3" /> Lanç.
                   </div>
                   <div className="text-lg font-bold text-foreground">{f.qtdConsultivo}</div>
                 </div>
                 <div>
-                  <div className="text-xs text-muted-foreground">% do Total</div>
+                  <div className="text-xs text-muted-foreground flex items-center gap-1">
+                    <Users className="w-3 h-3" /> Favoreci.
+                  </div>
+                  <div className="text-lg font-bold text-foreground">{f.totalTecnicos}</div>
+                </div>
+                <div>
+                  <div className="text-xs text-muted-foreground">% Total</div>
                   <div className="text-lg font-bold" style={{ color: f.pctConfirmada >= 10 ? '#22c55e' : '#f59e0b' }}>
                     {f.pctConfirmada.toFixed(1)}%
                   </div>
@@ -74,7 +80,7 @@ export const ComissionamentoFrentes: React.FC<Props> = ({ frentesData, selectedF
         ))}
         {displayData.length === 0 && (
           <p className="text-muted-foreground col-span-full text-center py-6">
-            Nenhum favorecido encontrado.
+            Nenhuma categoria encontrada.
           </p>
         )}
       </div>
@@ -84,13 +90,13 @@ export const ComissionamentoFrentes: React.FC<Props> = ({ frentesData, selectedF
         <div className="card">
           <h4 className="mb-6 flex items-center gap-2 text-lg font-bold">
             <Banknote className="w-5 h-5 text-accent" />
-            Top {chartData.length} Favorecidos — Total Pago
+            Top {chartData.length} Categorias — Total Pago
           </h4>
           <div style={{ height: 380 }}>
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 60 }}>
                 <XAxis
-                  dataKey="favorecido"
+                  dataKey="categoria"
                   tick={{ fill: 'hsl(223 16% 70%)', fontSize: 10 }}
                   angle={-25}
                   textAnchor="end"
