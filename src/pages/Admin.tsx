@@ -3,8 +3,10 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/useAuth';
 import { externalSupabase } from '@/integrations/supabase/externalClient';
 import { Button } from '@/components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { useTheme } from '@/contexts/ThemeContext';
 import {
   Table,
   TableBody,
@@ -31,6 +33,8 @@ import {
   ArrowLeft,
   RefreshCw,
   Shield,
+  Sun,
+  Moon,
 } from 'lucide-react';
 
 interface PendingUser {
@@ -53,6 +57,7 @@ interface AllUser {
 export default function Admin() {
   const navigate = useNavigate();
   const { isAdmin, isLoading: authLoading, user } = useAuth();
+  const { theme, toggleTheme } = useTheme();
 
   const [pendingUsers, setPendingUsers] = useState<PendingUser[]>([]);
   const [allUsers, setAllUsers] = useState<AllUser[]>([]);
@@ -250,10 +255,20 @@ export default function Admin() {
               </p>
             </div>
           </div>
-          <Button onClick={fetchUsers} variant="outline" className="gap-2">
-            <RefreshCw className="h-4 w-4" />
-            Atualizar
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              onClick={toggleTheme}
+              variant="outline"
+              size="icon"
+              title={theme === 'dark' ? 'Mudar para tema claro' : 'Mudar para tema escuro'}
+            >
+              {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+            </Button>
+            <Button onClick={fetchUsers} variant="outline" className="gap-2">
+              <RefreshCw className="h-4 w-4" />
+              Atualizar
+            </Button>
+          </div>
         </div>
 
         {/* Stats Cards */}
@@ -299,171 +314,174 @@ export default function Admin() {
           </Card>
         </div>
 
-        {/* Pending Users */}
-        {pendingUsers.length > 0 && (
-          <Card className="border-warning/50">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-warning">
-                <Clock className="h-5 w-5" />
-                Usuários Pendentes ({pendingUsers.length})
-              </CardTitle>
-              <CardDescription>
-                Usuários aguardando aprovação para acessar o sistema.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Email</TableHead>
-                    <TableHead>Nome</TableHead>
-                    <TableHead>Cadastrado em</TableHead>
-                    <TableHead className="text-right">Ação</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {pendingUsers.map((pendingUser) => (
-                    <TableRow key={pendingUser.id}>
-                      <TableCell className="font-medium">
-                        {pendingUser.email || '-'}
-                      </TableCell>
-                      <TableCell>{pendingUser.display_name || '-'}</TableCell>
-                      <TableCell>{formatDate(pendingUser.created_at)}</TableCell>
-                      <TableCell className="text-right">
-                        <Button
-                          size="sm"
-                          onClick={() => approveUser(pendingUser.id)}
-                          disabled={approvingId === pendingUser.id}
-                          className="gap-2"
-                        >
-                          {approvingId === pendingUser.id ? (
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                          ) : (
-                            <CheckCircle className="h-4 w-4" />
-                          )}
-                          Aprovar
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
-        )}
+        <Tabs defaultValue="aprovados" className="w-full">
+          <TabsList>
+            <TabsTrigger value="aprovados">
+              Usuários ({allUsers.filter((u) => u.approved).length})
+            </TabsTrigger>
+            <TabsTrigger value="pendentes" className="gap-2">
+              Aprovações Pendentes
+              {pendingUsers.length > 0 && (
+                <Badge variant="outline" className="text-warning">
+                  {pendingUsers.length}
+                </Badge>
+              )}
+            </TabsTrigger>
+          </TabsList>
 
-        {/* All Users */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Users className="h-5 w-5" />
-              Todos os Usuários ({allUsers.length})
-            </CardTitle>
-            <CardDescription>
-              Lista completa de usuários cadastrados no sistema.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Nome</TableHead>
-                  <TableHead>Role</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Aprovado em</TableHead>
-                  <TableHead className="text-right">Ação</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {allUsers.map((u) => (
-                  <TableRow key={u.id}>
-                    <TableCell className="font-medium">
-                      {u.email || '-'}
-                      {u.id === user?.id && (
-                        <Badge variant="outline" className="ml-2">
-                          Você
-                        </Badge>
-                      )}
-                    </TableCell>
-                    <TableCell>{u.display_name || '-'}</TableCell>
-                    <TableCell>
-                      {u.id !== user?.id ? (
-                        <Select
-                          value={u.role}
-                          onValueChange={(v) => changeRole(u.id, v)}
-                          disabled={approvingId === u.id}
-                        >
-                          <SelectTrigger className="w-32 h-8">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="admin">admin</SelectItem>
-                            <SelectItem value="user">user</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      ) : (
-                        <Badge variant="default">{u.role}</Badge>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      {u.approved ? (
-                        <Badge className="bg-success text-success-foreground gap-1">
-                          <CheckCircle className="h-3 w-3" />
-                          Aprovado
-                        </Badge>
-                      ) : (
-                        <Badge variant="outline" className="text-warning gap-1">
-                          <Clock className="h-3 w-3" />
-                          Pendente
-                        </Badge>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      {u.approved_at ? formatDate(u.approved_at) : '-'}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {u.id !== user?.id && (
-                        <>
-                          {u.approved ? (
+          {/* Pending Users */}
+          <TabsContent value="pendentes">
+            <Card className="border-warning/50">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-warning">
+                  <Clock className="h-5 w-5" />
+                  Usuários Pendentes ({pendingUsers.length})
+                </CardTitle>
+                <CardDescription>
+                  Usuários aguardando aprovação para acessar o sistema.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {pendingUsers.length === 0 ? (
+                  <p className="text-sm text-muted-foreground py-4 text-center">
+                    Nenhum usuário pendente no momento.
+                  </p>
+                ) : (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Email</TableHead>
+                        <TableHead>Nome</TableHead>
+                        <TableHead>Cadastrado em</TableHead>
+                        <TableHead className="text-right">Ação</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {pendingUsers.map((pendingUser) => (
+                        <TableRow key={pendingUser.id}>
+                          <TableCell className="font-medium">
+                            {pendingUser.email || '-'}
+                          </TableCell>
+                          <TableCell>{pendingUser.display_name || '-'}</TableCell>
+                          <TableCell>{formatDate(pendingUser.created_at)}</TableCell>
+                          <TableCell className="text-right">
                             <Button
                               size="sm"
-                              variant="destructive"
-                              onClick={() => revokeAccess(u.id)}
-                              disabled={approvingId === u.id}
+                              onClick={() => approveUser(pendingUser.id)}
+                              disabled={approvingId === pendingUser.id}
                               className="gap-2"
                             >
-                              {approvingId === u.id ? (
-                                <Loader2 className="h-4 w-4 animate-spin" />
-                              ) : (
-                                <XCircle className="h-4 w-4" />
-                              )}
-                              Revogar
-                            </Button>
-                          ) : (
-                            <Button
-                              size="sm"
-                              onClick={() => approveUser(u.id)}
-                              disabled={approvingId === u.id}
-                              className="gap-2"
-                            >
-                              {approvingId === u.id ? (
+                              {approvingId === pendingUser.id ? (
                                 <Loader2 className="h-4 w-4 animate-spin" />
                               ) : (
                                 <CheckCircle className="h-4 w-4" />
                               )}
                               Aprovar
                             </Button>
-                          )}
-                        </>
-                      )}
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Approved Users */}
+          <TabsContent value="aprovados">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Users className="h-5 w-5" />
+                  Usuários ({allUsers.filter((u) => u.approved).length})
+                </CardTitle>
+                <CardDescription>
+                  Lista de usuários ativos no sistema.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Email</TableHead>
+                      <TableHead>Nome</TableHead>
+                      <TableHead>Role</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Aprovado em</TableHead>
+                      <TableHead className="text-right">Ação</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {allUsers
+                      .filter((u) => u.approved)
+                      .map((u) => (
+                        <TableRow key={u.id}>
+                          <TableCell className="font-medium">
+                            {u.email || '-'}
+                            {u.id === user?.id && (
+                              <Badge variant="outline" className="ml-2">
+                                Você
+                              </Badge>
+                            )}
+                          </TableCell>
+                          <TableCell>{u.display_name || '-'}</TableCell>
+                          <TableCell>
+                            {u.id === user?.id ? (
+                              <Badge variant={u.role === 'admin' ? 'default' : 'secondary'}>
+                                {u.role}
+                              </Badge>
+                            ) : (
+                              <Select
+                                value={u.role}
+                                onValueChange={(value) => changeRole(u.id, value)}
+                                disabled={approvingId === u.id}
+                              >
+                                <SelectTrigger className="w-[120px] h-8">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="user">user</SelectItem>
+                                  <SelectItem value="admin">admin</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            <Badge className="bg-success text-success-foreground gap-1">
+                              <CheckCircle className="h-3 w-3" />
+                              Aprovado
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            {u.approved_at ? formatDate(u.approved_at) : '-'}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            {u.id !== user?.id && (
+                              <Button
+                                size="sm"
+                                variant="destructive"
+                                onClick={() => revokeAccess(u.id)}
+                                disabled={approvingId === u.id}
+                                className="gap-2"
+                              >
+                                {approvingId === u.id ? (
+                                  <Loader2 className="h-4 w-4 animate-spin" />
+                                ) : (
+                                  <XCircle className="h-4 w-4" />
+                                )}
+                                Revogar
+                              </Button>
+                            )}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );

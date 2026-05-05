@@ -1,12 +1,14 @@
 import React from 'react';
-import { DollarSign, Calendar, LogOut, Shield } from 'lucide-react';
+import { DollarSign, Calendar, LogOut, Shield, Sun, Moon } from 'lucide-react';
 import { useAuth } from '@/contexts/useAuth';
+import { useTheme } from '@/contexts/ThemeContext';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 
 export const ComissionamentoHeader: React.FC = () => {
   const { signOut, profile } = useAuth();
   const navigate = useNavigate();
+  const { theme, toggleTheme } = useTheme();
   const isAdmin = profile?.role === 'admin';
 
   const currentDate = new Date().toLocaleDateString('pt-BR', {
@@ -43,6 +45,14 @@ export const ComissionamentoHeader: React.FC = () => {
               <Shield className="w-4 h-4" /> Admin
             </Button>
           )}
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={toggleTheme}
+            title={theme === 'dark' ? 'Tema claro' : 'Tema escuro'}
+          >
+            {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+          </Button>
           <Button variant="ghost" size="sm"
             onClick={async () => { await signOut(); navigate('/login'); }}
             className="gap-2 text-destructive hover:text-destructive hover:bg-destructive/10">

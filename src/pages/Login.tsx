@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/useAuth';
 import { Button } from '@/components/ui/button';
@@ -27,7 +27,7 @@ export default function Login() {
 
   useEffect(() => {
     if (!authLoading && user && isApproved) {
-      navigate('/comissionamento', { replace: true });
+      navigate('/pagamentos', { replace: true });
     }
   }, [user, isApproved, authLoading, navigate]);
 
@@ -68,7 +68,7 @@ export default function Login() {
         description: result.message,
       });
        // Força navegação imediata
-      navigate('/comissionamento', { replace: true });
+      navigate('/pagamentos', { replace: true });
 
     } else {
       toast({
