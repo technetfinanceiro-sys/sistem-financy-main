@@ -4,6 +4,8 @@ import { ComissionamentoFilters as FiltersType, LancamentoPix, OpcaoSelect } fro
 import { X, FileEdit, Download, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ComissionamentoFormDialog } from './ComissionamentoFormDialog';
+import { ComissionamentoImportExcel } from './ComissionamentoImportExcel';
+import { useAuth } from '@/contexts/useAuth';
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -95,12 +97,14 @@ interface Props {
   onManualSubmit: (data: Record<string, any>) => Promise<void>;
   filteredData: LancamentoPix[];
   opcoes: OpcoesData;
+  onImportExcel?: (rows: Record<string, any>[]) => Promise<{ inserted: number; skipped: number; errors: string[] }>;
 }
 
 export const ComissionamentoFilters: React.FC<Props> = ({
   filters, setFilters, clearFilters, uniqueCidades, uniqueNomes, uniqueFrente, totalFiltered,
-  onManualSubmit, filteredData, opcoes
+  onManualSubmit, filteredData, opcoes, onImportExcel
 }) => {
+  const { isAdmin } = useAuth();
   const hasFilters = filters.cidade.length > 0 || filters.dataInicio || filters.dataFim
     || filters.nome.length > 0 || filters.frente.length > 0 || filters.contrato.length > 0
     || (filters.descricao && filters.descricao.trim().length > 0)
@@ -257,6 +261,9 @@ export const ComissionamentoFilters: React.FC<Props> = ({
           <Button variant="outline" size="sm" onClick={() => setFormOpen(true)} className="gap-1">
             <FileEdit className="w-4 h-4" /> Novo Lançamento
           </Button>
+          {isAdmin && onImportExcel && (
+            <ComissionamentoImportExcel onImport={onImportExcel} />
+          )}
           {/* <Button variant="outline" size="sm" onClick={handleExportExcel} disabled={filteredData.length === 0} className="gap-1">
             <Download className="w-4 h-4" /> Exportar Excel
           </Button> */}

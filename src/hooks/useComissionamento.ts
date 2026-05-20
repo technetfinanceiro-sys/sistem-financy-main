@@ -258,6 +258,78 @@ export function useComissionamento() {
     await fetchData();
   }, [fetchData]);
 
+  const importExcel = useCallback(async (rows: Record<string, any>[]) => {
+    // Helper: resolve option name -> id, auto-creating when missing
+    const resolverCache: Record<string, Map<string, string>> = {};
+    const resolveOpcao = async (table: string, name: string | null): Promise<string | null> => {
+      if (!name) return null;
+      const key = name.toUpperCase().trim();
+      if (!resolverCache[table]) {
+        resolverCache[table] = new Map();
+        const { data: existing } = await externalSupabase.from(table).select('id, nome');
+        (existing || []).forEach((r: any) => resolverCache[table].set(String(r.nome).toUpperCase().trim(), r.id));
+      }
+      const cached = resolverCache[table].get(key);
+      if (cached) return cached;
+      const { data: inserted, error } = await externalSupabase
+        .from(table)
+        .insert({ nome: name })
+        .select('id')
+        .maybeSingle();
+      if (error || !inserted) return null;
+      resolverCache[table].set(key, inserted.id);
+      return inserted.id;
+    };
+
+    const errors: string[] = [];
+    let inserted = 0;
+    let skipped = 0;
+    const records: any[] = [];
+
+    for (const r of rows) {
+      if (!r.data_lancamento && r.valor == null && !r.descricao) { skipped++; continue; }
+      try {
+        const unidade_id = await resolveOpcao('opcoes_unidade', r.unidade_name);
+        const centro_de_custo_id = await resolveOpcao('opcoes_centro_de_custo', r.centro_de_custo_name);
+        const categoria_id = await resolveOpcao('opcoes_categoria', r.categoria_name);
+        const cnpj_id = await resolveOpcao('opcoes_cnpj', r.cnpj_name);
+
+        records.push({
+          data_lancamento: r.data_lancamento,
+          nome: r.descricao || r.banco || 'IMPORTADO',
+          chave_pix: '',
+          favorecido: r.descricao || r.banco || 'IMPORTADO',
+          descricao: r.descricao,
+          valor: r.valor,
+          unidade_id,
+          centro_de_custo_id,
+          categoria_id,
+          cnpj_id,
+          banco: r.banco,
+          forma_pagamento: r.forma_pagamento,
+          status_pag: r.status_pag,
+        });
+      } catch (e: any) {
+        errors.push(e.message || 'erro linha');
+      }
+    }
+
+    if (records.length > 0) {
+      // Insert in chunks of 200
+      for (let i = 0; i < records.length; i += 200) {
+        const chunk = records.slice(i, i + 200);
+        const { error: insErr } = await externalSupabase.from('lancamentos_pix').insert(chunk);
+        if (insErr) errors.push(insErr.message);
+        else inserted += chunk.length;
+      }
+    }
+
+    await fetchData();
+    return { inserted, skipped, errors };
+  }, [fetchData]);
+
+
+
   return {
     data: filteredData,
     allData: data,
@@ -274,6 +346,7 @@ export function useComissionamento() {
     submitManualEntry,
     updateRecord,
     deleteRecord,
+    importExcel,
     uniqueCidades,
     uniqueNomes,
     uniqueFrente,

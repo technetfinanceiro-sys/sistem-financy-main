@@ -15,6 +15,9 @@ export interface LancamentoPix {
   categoria: string | null;
   secao_custeio: string | null;
   centro_custeio: string | null;
+  banco: string | null;
+  forma_pagamento: string | null;
+  status_pag: string | null;
   created_at?: string;
   updated_at?: string;
 }
