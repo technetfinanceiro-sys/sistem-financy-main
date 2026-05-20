@@ -261,29 +261,31 @@ export const ComissionamentoFilters: React.FC<Props> = ({
           <Button variant="outline" size="sm" onClick={() => setFormOpen(true)} className="gap-1">
             <FileEdit className="w-4 h-4" /> Novo Lançamento
           </Button>
-          {isAdmin && onImportExcel && (
-            <ComissionamentoImportExcel onImport={onImportExcel} />
-          )}
-          {/* <Button variant="outline" size="sm" onClick={handleExportExcel} disabled={filteredData.length === 0} className="gap-1">
-            <Download className="w-4 h-4" /> Exportar Excel
-          </Button> */}
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleGerarDRE}
-            disabled={filteredData.length === 0}
-            className="gap-1 border-accent/40 text-accent hover:bg-accent/10"
-            title="Demonstração do Resultado do Exercício"
-          >
-            <FileText className="w-4 h-4" /> Gerar DRE
-          </Button>
-          <span className="text-sm text-muted-foreground">
-            Total: <strong className="text-foreground">{totalFiltered}</strong> registros
-          </span>
-          {hasFilters && (
-            <Button variant="outline" size="sm" onClick={clearFilters} className="gap-1">
-              <X className="w-3 h-3" /> Limpar
-            </Button>
+          {isAdmin && (
+            <>
+              {onImportExcel && <ComissionamentoImportExcel onImport={onImportExcel} />}
+              <Button variant="outline" size="sm" onClick={handleExportExcel} disabled={filteredData.length === 0} className="gap-1">
+                <Download className="w-4 h-4" /> Exportar Excel
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleGerarDRE}
+                disabled={filteredData.length === 0}
+                className="gap-1 border-accent/40 text-accent hover:bg-accent/10"
+                title="Demonstração do Resultado do Exercício"
+              >
+                <FileText className="w-4 h-4" /> Gerar DRE
+              </Button>
+              <span className="text-sm text-muted-foreground">
+                Total: <strong className="text-foreground">{totalFiltered}</strong> registros
+              </span>
+              {hasFilters && (
+                <Button variant="outline" size="sm" onClick={clearFilters} className="gap-1">
+                  <X className="w-3 h-3" /> Limpar
+                </Button>
+              )}
+            </>
           )}
         </div>
       </div>
@@ -294,71 +296,71 @@ export const ComissionamentoFilters: React.FC<Props> = ({
         onSubmit={onManualSubmit}
         opcoes={opcoes}
       />
-
-      <div className="filter-section">
-        <MultiSelect
-          label="Unidade"
-          options={uniqueCidades}
-          selected={filters.cidade}
-          onChange={(val) => setFilters({ cidade: val })}
-        />
-
-        <div className="form-group">
-          <Label className="form-label">Data Inicial</Label>
-          <input
-            type="date"
-            className="form-control bg-card border border-border rounded-lg px-3 py-2 text-foreground w-full"
-            value={filters.dataInicio}
-            onChange={e => setFilters({ dataInicio: e.target.value })}
+      {(
+        <div className="filter-section">
+          <MultiSelect
+            label="Unidade"
+            options={uniqueCidades}
+            selected={filters.cidade}
+            onChange={(val) => setFilters({ cidade: val })}
           />
-        </div>
 
-        <div className="form-group">
-          <Label className="form-label">Data Final</Label>
-          <input
-            type="date"
-            className="form-control bg-card border border-border rounded-lg px-3 py-2 text-foreground w-full"
-            value={filters.dataFim}
-            onChange={e => setFilters({ dataFim: e.target.value })}
+          <div className="form-group">
+            <Label className="form-label">Data Inicial</Label>
+            <input
+              type="date"
+              className="form-control bg-card border border-border rounded-lg px-3 py-2 text-foreground w-full"
+              value={filters.dataInicio}
+              onChange={e => setFilters({ dataInicio: e.target.value })}
+            />
+          </div>
+
+          <div className="form-group">
+            <Label className="form-label">Data Final</Label>
+            <input
+              type="date"
+              className="form-control bg-card border border-border rounded-lg px-3 py-2 text-foreground w-full"
+              value={filters.dataFim}
+              onChange={e => setFilters({ dataFim: e.target.value })}
+            />
+          </div>
+
+          <MultiSelect
+            label="Favorecido"
+            options={uniqueNomes}
+            selected={filters.nome}
+            onChange={(val) => setFilters({ nome: val })}
           />
-        </div>
 
-        <MultiSelect
-          label="Favorecido"
-          options={uniqueNomes}
-          selected={filters.nome}
-          onChange={(val) => setFilters({ nome: val })}
-        />
+          <MultiSelect
+            label="Categoria"
+            options={uniqueFrente}
+            selected={filters.frente}
+            onChange={(val) => setFilters({ frente: val })}
+          />
 
-        <MultiSelect
-          label="Categoria"
-          options={uniqueFrente}
-          selected={filters.frente}
-          onChange={(val) => setFilters({ frente: val })}
-        />
+          <MultiSelect
+            label="Centro de Custo"
+            options={uniqueCentroCusto}
+            selected={filters.contrato}
+            onChange={(val) => setFilters({ contrato: val })}
+          />
 
-        <MultiSelect
-          label="Centro de Custo"
-          options={uniqueCentroCusto}
-          selected={filters.contrato}
-          onChange={(val) => setFilters({ contrato: val })}
-        />
+          <MultiSelect
+            label="CNPJ"
+            options={uniqueCnpj}
+            selected={filters.cnpj}
+            onChange={(val) => setFilters({ cnpj: val })}
+          />
 
-        <MultiSelect
-          label="CNPJ"
-          options={uniqueCnpj}
-          selected={filters.cnpj}
-          onChange={(val) => setFilters({ cnpj: val })}
-        />
+          <MultiSelect
+            label="Centro de Custeio"
+            options={uniqueCentroCusteio}
+            selected={filters.centroCusteio}
+            onChange={(val) => setFilters({ centroCusteio: val })}
+          />
 
-        <MultiSelect
-          label="Centro de Custeio"
-          options={uniqueCentroCusteio}
-          selected={filters.centroCusteio}
-          onChange={(val) => setFilters({ centroCusteio: val })}
-        />
-
-        {/* <div className="form-group">
+          {/* <div className="form-group">
           <Label className="form-label">Descrição</Label>
           <input
             type="text"
@@ -368,7 +370,8 @@ export const ComissionamentoFilters: React.FC<Props> = ({
             onChange={e => setFilters({ descricao: e.target.value })}
           />
         </div> */}
-      </div>
+        </div>
+      )}
     </div>
   );
 };

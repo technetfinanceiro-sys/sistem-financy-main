@@ -9,6 +9,7 @@ import { ComissionamentoFrentes } from '@/components/comissionamento/Comissionam
 import { ComissionamentoValores } from '@/components/comissionamento/ComissionamentoValores';
 import { TabNavigation } from '@/components/comissionamento/TabNavigation';
 import { LoadingSpinner } from '@/components/comissionamento/LoadingSpinner';
+import { useAuth } from '@/contexts/useAuth';
 
 const TABS = [
   { id: 'kpis', label: 'KPIs' },
@@ -21,6 +22,7 @@ const TABS = [
 const Comissionamento: React.FC = () => {
   const hook = useComissionamento();
   const [activeTab, setActiveTab] = useState('kpis');
+  const { isAdmin } = useAuth();
 
   useEffect(() => {
     hook.fetchData();
@@ -58,7 +60,7 @@ const Comissionamento: React.FC = () => {
           <LoadingSpinner message="Carregando lançamentos PIX..." />
         )}
 
-        {hasData && (
+        {hasData && isAdmin && (
           <>
             <TabNavigation tabs={TABS} activeTab={activeTab} onTabChange={setActiveTab} />
 

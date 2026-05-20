@@ -27,7 +27,7 @@ const App = () => (
               <Route
                 path="/pagamentos"
                 element={
-                  <ProtectedRoute requireAdmin>
+                  <ProtectedRoute>
                     <Comissionamento />
                   </ProtectedRoute>
                 }
@@ -35,7 +35,7 @@ const App = () => (
               <Route
                 path="/"
                 element={
-                  <ProtectedRoute requireAdmin>
+                  <ProtectedRoute>
                     <Navigate to="/pagamentos" replace />
                   </ProtectedRoute>
                 }
