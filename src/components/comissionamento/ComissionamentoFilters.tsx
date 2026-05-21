@@ -296,7 +296,7 @@ export const ComissionamentoFilters: React.FC<Props> = ({
         onSubmit={onManualSubmit}
         opcoes={opcoes}
       />
-      {(
+      {isAdmin && (
         <div className="filter-section">
           <MultiSelect
             label="Unidade"
@@ -359,17 +359,6 @@ export const ComissionamentoFilters: React.FC<Props> = ({
             selected={filters.centroCusteio}
             onChange={(val) => setFilters({ centroCusteio: val })}
           />
-
-          {/* <div className="form-group">
-          <Label className="form-label">Descrição</Label>
-          <input
-            type="text"
-            className="form-control bg-card border border-border rounded-lg px-3 py-2 text-foreground w-full"
-            placeholder="Buscar na descrição..."
-            value={filters.descricao}
-            onChange={e => setFilters({ descricao: e.target.value })}
-          />
-        </div> */}
         </div>
       )}
     </div>
