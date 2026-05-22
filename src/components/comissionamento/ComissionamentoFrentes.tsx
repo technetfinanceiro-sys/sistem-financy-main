@@ -55,7 +55,7 @@ export const ComissionamentoFrentes: React.FC<Props> = ({ frentesData, selectedF
                 <div>
                   <div className="text-xs text-muted-foreground">% Total</div>
                   <div className="text-lg font-bold" style={{ color: f.pctConfirmada >= 10 ? '#22c55e' : '#f59e0b' }}>
-                    {f.pctConfirmada.toFixed(1)}%
+                    {f.pctConfirmada.toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}%
                   </div>
                 </div>
               </div>
@@ -112,8 +112,9 @@ export const ComissionamentoFrentes: React.FC<Props> = ({ frentesData, selectedF
                     color: 'white'
                   }}
                   formatter={(value: number, name: string) => {
+                    if (name === 'Total R$') return [`R$ ${value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, name];
                     if (name === 'valor') return [fmtBRL(value), 'Total'];
-                    if (name === 'qtd') return [value, 'Qtd'];
+                    if (name === 'qtd') return [value.toLocaleString('pt-BR'), 'Qtd'];
                     return [value, name];
                   }}
                 />
@@ -124,7 +125,7 @@ export const ComissionamentoFrentes: React.FC<Props> = ({ frentesData, selectedF
                     position="top"
                     fill="hsl(223 16% 70%)"
                     fontSize={10}
-                    formatter={(v: number) => v > 0 ? `R$ ${(v / 1000).toFixed(1)}k` : ''}
+                    formatter={(v: number) => v > 0 ? `R$ ${(v / 1000).toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}k` : ''}
                   />
                 </Bar>
               </BarChart>

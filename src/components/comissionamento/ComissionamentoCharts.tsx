@@ -15,8 +15,15 @@ interface Props {
 const fmtBRL = (v: number) =>
   `R$ ${v.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
-const fmtCompact = (v: number) =>
-  v >= 1000 ? `R$ ${(v / 1000).toFixed(1)}k` : `R$ ${v.toFixed(0)}`;
+const fmtPct = (v: number) =>
+  `${v.toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}%`;
+
+const fmtCompact = (v: number) => {
+  if (v >= 1000) {
+    return `R$ ${(v / 1000).toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}k`;
+  }
+  return `R$ ${v.toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
+};
 
 const PIE_COLORS = [
   '#22c55e', '#3b82f6', '#f59e0b', '#ef4444', '#8b5cf6',
@@ -72,6 +79,8 @@ export const ComissionamentoCharts: React.FC<Props> = ({ chartData, frentesData 
                     color: 'white'
                   }}
                   formatter={(value: number, name: string) => {
+                    if (name === 'Total R$') return [fmtBRL(value), name];
+                    if (name === 'Lançamentos') return [value.toLocaleString('pt-BR'), name];
                     if (name === 'valor') return [fmtBRL(value), 'Total R$'];
                     if (name === 'qtd') return [value, 'Lançamentos'];
                     return [value, name];
@@ -111,7 +120,7 @@ export const ComissionamentoCharts: React.FC<Props> = ({ chartData, frentesData 
                     outerRadius={130}
                     innerRadius={60}
                     paddingAngle={2}
-                    label={(e) => `${e.pct.toFixed(1)}%`}
+                    label={(e) => fmtPct(e.pct)}
                     labelLine={false}
                   >
                     {pieData.map((_, i) => (
@@ -139,7 +148,7 @@ export const ComissionamentoCharts: React.FC<Props> = ({ chartData, frentesData 
                   </div>
                   <div className="text-right flex-shrink-0">
                     <div className="text-sm font-bold text-foreground">{fmtBRL(p.value)}</div>
-                    <div className="text-xs text-muted-foreground">{p.pct.toFixed(1)}%</div>
+                      <div className="text-xs text-muted-foreground">{fmtPct(p.pct)}</div>
                   </div>
                 </div>
               ))}
@@ -159,20 +168,24 @@ export const ComissionamentoCharts: React.FC<Props> = ({ chartData, frentesData 
         {categoriaData.length > 0 ? (
           <div style={{ height: 420 }}>
             <ResponsiveContainer width="100%" height="100%">
-              <ComposedChart data={categoriaData} margin={{ top: 20, right: 30, left: 20, bottom: 80 }}>
+              <ComposedChart data={categoriaData} margin={{ top: 20, right: 30, left: 20, bottom: 45 }}>
                 <XAxis
                   dataKey="categoria"
-                  tick={{ fill: 'hsl(223 16% 70%)', fontSize: 12 }}
+                  tick={{ fill: 'hsl(19, 16%, 70%)', fontSize: 11 }}
                   interval={0}
-                  angle={-1}
+                  angle={-35}
                   textAnchor="end"
-                  height={80}
+                  height={110}
+                  tickFormatter={(value) => {
+                    const texto = String(value || '');
+                    return texto.length > 14 ? `${texto.slice(0, 14)}...` : texto;
+                  }}
                 />
                 <YAxis yAxisId="left" tick={{ fill: 'hsl(223 16% 70%)', fontSize: 11 }} tickFormatter={(v) => fmtCompact(v)} />
                 <YAxis yAxisId="right" orientation="right" tick={{ fill: 'hsl(223 16% 70%)', fontSize: 11 }} tickFormatter={(v) => fmtCompact(v)} />
                 <Tooltip
                   contentStyle={{
-                    backgroundColor: 'hsla(0, 16%, 65%, 1.00)',
+                    backgroundColor: 'rgb(136, 15, 15)',
                     border: '1px solid hsla(220, 4%, 17%, 1.00)',
                     borderRadius: '8px',
                     color: 'white'
