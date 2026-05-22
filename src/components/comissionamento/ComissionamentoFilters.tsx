@@ -254,7 +254,7 @@ export const ComissionamentoFilters: React.FC<Props> = ({
     doc.save(`DRE_${new Date().toISOString().slice(0, 10)}.pdf`);
   };
   return (
-    <div className="card" style={{ position: 'relative', zIndex: 100 }}>
+    <div className="card" style={{ position: 'relative', zIndex: 10 }}>
       <div className="flex flex-wrap justify-between items-center mb-4 gap-3">
         <h3 className="text-lg font-bold text-foreground">Filtros</h3>
         <div className="flex items-center gap-3 flex-wrap">
