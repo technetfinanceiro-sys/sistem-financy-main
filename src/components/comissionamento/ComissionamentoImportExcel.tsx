@@ -2,6 +2,14 @@ import React, { useRef, useState } from 'react';
 import { Upload, Loader2, CheckCircle, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import * as XLSX from 'xlsx';
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+    DialogDescription,
+    DialogFooter,
+} from '@/components/ui/dialog';
 
 interface Props {
     onImport: (rows: Record<string, any>[]) => Promise<{ inserted: number; skipped: number; errors: string[] }>;
@@ -128,7 +136,7 @@ export const ComissionamentoImportExcel: React.FC<Props> = ({ onImport }) => {
 
 if (errosValidacao.length > 0) {
     throw new Error(
-        `Importação cancelada. Corrija o Excel antes de importar:\n${errosValidacao.join("\n")}`
+        `Importação cancelada. Corrija o Excel antes de importar:\n\n${errosValidacao.join("\n")}`
     );
 }
 
@@ -168,12 +176,33 @@ if (errosValidacao.length > 0) {
                 {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
                 Importar Excel
             </Button>
-            {result && (
+            <Dialog open={!!result} onOpenChange={(open) => !open && setResult(null)}>
+                <DialogContent className="max-w-2xl">
+                    <DialogHeader>
+                        <DialogTitle className={result?.ok ? "text-emerald-500" : "text-destructive"}>
+                            {result?.ok ? "Importação concluída" : "Erro na importação"}
+                        </DialogTitle>
+
+                        <DialogDescription asChild>
+                            <div className="mt-3 max-h-[400px] overflow-y-auto whitespace-pre-line text-sm text-muted-foreground">
+                                {result?.message}
+                            </div>
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    <DialogFooter>
+                        <Button onClick={() => setResult(null)}>
+                            Entendi
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+            {/* {result && (
                 <span className={`flex items-center gap-1 text-xs ${result.ok ? 'text-emerald-500' : 'text-destructive'}`}>
                     {result.ok ? <CheckCircle className="w-3.5 h-3.5" /> : <AlertCircle className="w-3.5 h-3.5" />}
                     {result.message}
                 </span>
-            )}
+            )} */}
         </>
     );
 };
