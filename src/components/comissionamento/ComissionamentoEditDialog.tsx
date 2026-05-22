@@ -55,6 +55,8 @@ export const ComissionamentoEditDialog: React.FC<Props> = ({ open, onClose, onSa
         favorecido: record.favorecido || '',
         descricao: record.descricao || '',
         valor: record.valor != null ? String(record.valor) : '',
+        banco: record.banco || '',
+        status_pag: record.status_pag || '',
         cnpj_id: findIdByName(opcoes.cnpj, record.cnpj),
         unidade_id: findIdByName(opcoes.unidade, record.unidade),
         centro_de_custo_id: findIdByName(opcoes.centro_de_custo, record.centro_de_custo),
@@ -82,6 +84,8 @@ export const ComissionamentoEditDialog: React.FC<Props> = ({ open, onClose, onSa
         favorecido: form.favorecido,
         descricao: form.descricao || null,
         valor: form.valor ? parseFloat(form.valor.replace(/[^\d.,\-]/g, '').replace(',', '.')) : null,
+        banco: form.banco || null,
+        status_pag: form.status_pag || null,
         cnpj_id: form.cnpj_id || null,
         unidade_id: form.unidade_id || null,
         centro_de_custo_id: form.centro_de_custo_id || null,
@@ -171,6 +175,19 @@ export const ComissionamentoEditDialog: React.FC<Props> = ({ open, onClose, onSa
               {renderSelect('categoria_id', 'Categoria', opcoes.categoria)}
               {renderSelect('secao_custeio_id', 'Seção de Custeio', opcoes.secao_custeio)}
               {renderSelect('centro_custeio_id', 'Centro de Custeio', opcoes.centro_custeio)}
+
+               <div className="space-y-1">
+                <Label className="text-sm font-medium">Banco</Label>
+                <Input value={form.banco || ''} onChange={e => set('banco', e.target.value)} />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-sm font-medium">Status Pagamento</Label>
+                <select className={selectClass} value={form.status_pag || ''} onChange={e => set('status_pag', e.target.value)}>
+                  <option value="">Selecione...</option>
+                  <option value="PAGO">PAGO</option>
+                  <option value="A PAGAR">A PAGAR</option>
+                </select>
+              </div>
 
               <div className="space-y-1 md:col-span-2">
                 <Label className="text-sm text-muted-foreground">Descrição</Label>

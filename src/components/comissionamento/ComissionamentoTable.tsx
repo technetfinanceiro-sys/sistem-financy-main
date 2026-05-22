@@ -71,9 +71,12 @@ export const ComissionamentoTable: React.FC<Props> = ({ data, onUpdate, onDelete
     { key: 'data_lancamento', label: 'Data' },
     { key: 'unidade', label: 'Cidade/Unidade' },
     { key: 'favorecido', label: 'Favorecido' },
+    { key: 'chave_pix', label: 'Chave PIX' },
     { key: 'centro_custeio', label: 'Centro de Custeio' },
     { key: 'centro_de_custo', label: 'Centro de Custo' },
     { key: 'categoria', label: 'Categoria' },
+    { key: 'banco', label: 'Banco' },
+    { key: 'status_pag', label: 'Status' },
     { key: 'valor', label: 'Valor' },
   ];
   const totalValor = useMemo(() => sorted.reduce((s, r) => s + (r.valor || 0), 0), [sorted]);
@@ -89,24 +92,27 @@ export const ComissionamentoTable: React.FC<Props> = ({ data, onUpdate, onDelete
 
     autoTable(doc, {
       startY: 30,
-      head: [['Data', 'Cidade/Unidade', 'Favorecido', 'Centro de Custeio', 'Centro de Custo', 'Categoria', 'Valor']],
+      head: [['Data', 'Cidade/Unidade', 'Favorecido', 'Chave PIX', 'Centro de Custeio', 'Centro de Custo', 'Categoria', 'Banco', 'Status', 'Valor']],
       body: sorted.map(r => [
         formatDate(r.data_lancamento),
         r.unidade || '-',
         r.favorecido || '-',
+        r.chave_pix || '-',
         r.centro_custeio || '-',
         r.centro_de_custo || '-',
         r.categoria || '-',
+        r.banco || '-',
+        r.status_pag || '-',
         fmtBRL(r.valor),
       ]),
       foot: [[
-        { content: 'TOTAL GERAL', colSpan: 6, styles: { halign: 'right', fontStyle: 'bold' } },
+        { content: 'TOTAL GERAL', colSpan: 9, styles: { halign: 'right', fontStyle: 'bold' } },
         { content: fmtBRL(totalValor), styles: { fontStyle: 'bold', halign: 'right' } },
       ]],
       styles: { fontSize: 7 },
       headStyles: { fillColor: [30, 58, 95], textColor: 255 },
       footStyles: { fillColor: [240, 240, 240], textColor: 30 },
-      columnStyles: { 6: { halign: 'right' } },
+      columnStyles: { 9: { halign: 'right' } },
     });
 
     doc.save(`dados-detalhados-${new Date().toISOString().slice(0, 10)}.pdf`);
@@ -153,9 +159,20 @@ export const ComissionamentoTable: React.FC<Props> = ({ data, onUpdate, onDelete
                   <td>{formatDate(row.data_lancamento)}</td>
                   <td>{row.unidade || '-'}</td>
                   <td className="font-medium">{row.favorecido || '-'}</td>
+                  <td className="text-xs text-muted-foreground max-w-[180px] truncate" title={row.chave_pix || ''}>{row.chave_pix || '-'}</td>
                   <td>{row.centro_custeio || '-'}</td>
                   <td>{row.centro_de_custo || '-'}</td>
                   <td>{row.categoria || '-'}</td>
+                  <td>{row.banco || '-'}</td>
+                  <td>
+                    {row.status_pag ? (
+                      <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${
+                        (row.status_pag || '').toUpperCase() === 'PAGO'
+                          ? 'bg-green-500/15 text-green-600 dark:text-green-400'
+                          : 'bg-yellow-500/15 text-yellow-600 dark:text-yellow-400'
+                      }`}>{row.status_pag}</span>
+                    ) : '-'}
+                  </td>
                   <td className="font-semibold">{fmtBRL(row.valor)}</td>
                 </tr>
               ))}
