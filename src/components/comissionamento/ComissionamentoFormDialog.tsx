@@ -69,6 +69,20 @@ const findIdByName = (opts: OpcaoSelect[], name: string | null | undefined): str
   return match?.id || '';
 };
 
+// Formata string de dígitos brutos como "R$ 0,00"
+const fmtCurrencyDisplay = (digits: string): string => {
+  const clean = digits.replace(/\D/g, '');
+  if (!clean) return '';
+  const padded = clean.padStart(3, '0');
+  const intPart = padded.slice(0, -2);
+  const decPart = padded.slice(-2);
+  const formattedInt = parseInt(intPart, 10).toLocaleString('pt-BR');
+  return `R$ ${formattedInt},${decPart}`;
+};
+
+// Extrai apenas os dígitos de um valor já formatado
+const extractDigits = (raw: string): string => raw.replace(/\D/g, '');
+
 export const ComissionamentoFormDialog: React.FC<Props> = ({ open, onClose, onSubmit, opcoes, existingRecords = [] }) => {
   const { profile } = useAuth();
   const userName = profile?.display_name || '';
@@ -82,6 +96,17 @@ export const ComissionamentoFormDialog: React.FC<Props> = ({ open, onClose, onSu
       return { ...emptyForm, nome: userName };
     }
   });
+
+  const [valorDisplay, setValorDisplay] = useState(() => {
+    try {
+      const saved = window.localStorage.getItem(DRAFT_KEY);
+      const parsed = saved ? JSON.parse(saved) : {};
+      return fmtCurrencyDisplay(extractDigits(String(parsed.valor || '')));
+    } catch {
+      return '';
+    }
+  });
+
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState('');
@@ -156,6 +181,12 @@ export const ComissionamentoFormDialog: React.FC<Props> = ({ open, onClose, onSu
     setActiveSuggest(null);
   };
 
+    const handleValorChange = (raw: string) => {
+    const digits = extractDigits(raw);
+    set('valor', digits);
+    setValorDisplay(fmtCurrencyDisplay(digits));
+  };
+
   const isValid = requiredFields.every(f => form[f as keyof FormState]?.toString().trim());
 
   const handleSubmit = async () => {
@@ -169,7 +200,7 @@ export const ComissionamentoFormDialog: React.FC<Props> = ({ open, onClose, onSu
         chave_pix: form.chave_pix.trim(),
         favorecido: form.favorecido.trim(),
         descricao: form.descricao?.trim() || null,
-        valor: parseFloat(form.valor.replace(/[^\d.,-]/g, '').replace(',', '.')),
+        valor: parseFloat(form.valor.replace(/[^\d]/g, '')) / 100,
         cnpj_id: form.cnpj_id,
         unidade_id: form.unidade_id,
         centro_de_custo_id: form.centro_de_custo_id,
@@ -183,6 +214,7 @@ export const ComissionamentoFormDialog: React.FC<Props> = ({ open, onClose, onSu
       setTimeout(() => {
         setSuccess(false);
         setForm({ ...emptyForm, nome: userName });
+        setValorDisplay('');
         onClose();
       }, 1300);
     } catch (err: unknown) {
@@ -192,7 +224,7 @@ export const ComissionamentoFormDialog: React.FC<Props> = ({ open, onClose, onSu
     }
   };
 
-  const handleClear = () => { window.localStorage.removeItem(DRAFT_KEY); setForm({ ...emptyForm, nome: userName }); setError(''); };
+  const handleClear = () => { window.localStorage.removeItem(DRAFT_KEY); setForm({ ...emptyForm }); setValorDisplay(''); setError(''); };
 
   const selectClass = "w-full bg-card border border-border rounded-lg px-3 py-2 text-foreground text-sm";
 
@@ -279,7 +311,15 @@ export const ComissionamentoFormDialog: React.FC<Props> = ({ open, onClose, onSu
 
               <div className="space-y-1">
                 <Label className="text-sm font-medium">Valor *</Label>
-                <Input placeholder="R$ 0,00" inputMode="decimal" value={form.valor} onChange={e => set('valor', e.target.value)} />
+                  <Input
+                  placeholder="R$ 0,00"
+                  inputMode="decimal"
+                  value={valorDisplay}
+                  onChange={e => handleValorChange(e.target.value)}
+                  onFocus={e => {
+                    if (!valorDisplay) handleValorChange('');
+                  }}
+                />
               </div>
 
               {renderSelect('cnpj_id', 'CNPJ', opcoes.cnpj)}
