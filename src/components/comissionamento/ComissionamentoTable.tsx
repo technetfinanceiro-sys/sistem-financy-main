@@ -1,8 +1,10 @@
 import React, { useState, useMemo } from 'react';
 import { LancamentoPix, OpcaoSelect } from '@/types/comissionamento';
-import { ChevronLeft, ChevronRight, Pencil } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Pencil, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ComissionamentoEditDialog } from './ComissionamentoEditDialog';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 interface OpcoesData {
   cnpj: OpcaoSelect[];
@@ -74,9 +76,50 @@ export const ComissionamentoTable: React.FC<Props> = ({ data, onUpdate, onDelete
     { key: 'categoria', label: 'Categoria' },
     { key: 'valor', label: 'Valor' },
   ];
+  const totalValor = useMemo(() => sorted.reduce((s, r) => s + (r.valor || 0), 0), [sorted]);
+
+  const exportPDF = () => {
+    const doc = new jsPDF();
+    doc.setFontSize(16);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Dados Detalhados', 14, 18);
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Gerado em: ${new Date().toLocaleString('pt-BR')}`, 14, 25);
+
+    autoTable(doc, {
+      startY: 30,
+      head: [['Data', 'Cidade/Unidade', 'Favorecido', 'Centro de Custeio', 'Centro de Custo', 'Categoria', 'Valor']],
+      body: sorted.map(r => [
+        formatDate(r.data_lancamento),
+        r.unidade || '-',
+        r.favorecido || '-',
+        r.centro_custeio || '-',
+        r.centro_de_custo || '-',
+        r.categoria || '-',
+        fmtBRL(r.valor),
+      ]),
+      foot: [[
+        { content: 'TOTAL GERAL', colSpan: 6, styles: { halign: 'right', fontStyle: 'bold' } },
+        { content: fmtBRL(totalValor), styles: { fontStyle: 'bold', halign: 'right' } },
+      ]],
+      styles: { fontSize: 7 },
+      headStyles: { fillColor: [30, 58, 95], textColor: 255 },
+      footStyles: { fillColor: [240, 240, 240], textColor: 30 },
+      columnStyles: { 6: { halign: 'right' } },
+    });
+
+    doc.save(`dados-detalhados-${new Date().toISOString().slice(0, 10)}.pdf`);
+  };
 
   return (
     <>
+      <div className="flex justify-end gap-2 mb-4">
+        <Button variant="outline" size="sm" onClick={exportPDF}>
+          <FileText className="w-4 h-4 mr-2" />
+          Exportar PDF
+        </Button>
+      </div>
       <div className="card overflow-hidden">
         <div className="overflow-x-auto">
           <table className="data-table w-full">
