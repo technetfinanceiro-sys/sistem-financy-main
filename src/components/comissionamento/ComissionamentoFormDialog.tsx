@@ -1,10 +1,10 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Loader2, CheckCircle } from 'lucide-react';
-import { OpcaoSelect } from '@/types/comissionamento';
+import { LancamentoPix, OpcaoSelect } from '@/types/comissionamento';
 import { useAuth } from '@/contexts/useAuth';
 
 interface OpcoesData {
@@ -34,6 +34,7 @@ interface Props {
     centro_custeio_id: string;
   }) => Promise<void>;
   opcoes: OpcoesData;
+  existingRecords?: LancamentoPix[];
 }
 
 const emptyForm = {
@@ -62,7 +63,13 @@ type FormState = typeof emptyForm;
 
 const getErrorMessage = (err: unknown) => err instanceof Error ? err.message : 'Erro ao enviar';
 
-export const ComissionamentoFormDialog: React.FC<Props> = ({ open, onClose, onSubmit, opcoes }) => {
+const findIdByName = (opts: OpcaoSelect[], name: string | null | undefined): string => {
+  if (!name) return '';
+  const match = opts.find(o => (o.nome || '').trim().toLowerCase() === name.trim().toLowerCase());
+  return match?.id || '';
+};
+
+export const ComissionamentoFormDialog: React.FC<Props> = ({ open, onClose, onSubmit, opcoes, existingRecords = [] }) => {
   const { profile } = useAuth();
   const userName = profile?.display_name || '';
 
@@ -78,6 +85,8 @@ export const ComissionamentoFormDialog: React.FC<Props> = ({ open, onClose, onSu
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState('');
+  const [activeSuggest, setActiveSuggest] = useState<'favorecido' | 'chave_pix' | null>(null);
+  const suggestRef = useRef<HTMLDivElement>(null);
 
   const set = (field: string, value: string) => setForm(prev => ({ ...prev, [field]: value }));
 
@@ -93,6 +102,59 @@ export const ComissionamentoFormDialog: React.FC<Props> = ({ open, onClose, onSu
     if (hasDraft) window.localStorage.setItem(DRAFT_KEY, JSON.stringify(form));
     else window.localStorage.removeItem(DRAFT_KEY);
   }, [form]);
+
+  useEffect(() => {
+    const onClickOutside = (e: MouseEvent) => {
+      if (suggestRef.current && !suggestRef.current.contains(e.target as Node)) setActiveSuggest(null);
+    };
+    document.addEventListener('mousedown', onClickOutside);
+    return () => document.removeEventListener('mousedown', onClickOutside);
+  }, []);
+
+  // Dedup most recent by chave (favorecido|chave_pix)
+  const uniqueRecords = useMemo(() => {
+    const sorted = [...existingRecords].sort((a, b) => {
+      const da = a.created_at || a.data_lancamento || '';
+      const db = b.created_at || b.data_lancamento || '';
+      return db.localeCompare(da);
+    });
+    const seen = new Set<string>();
+    const out: LancamentoPix[] = [];
+    for (const r of sorted) {
+      const key = `${(r.favorecido || '').toLowerCase()}|${(r.chave_pix || '').toLowerCase()}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      out.push(r);
+    }
+    return out;
+  }, [existingRecords]);
+
+  const suggestions = useMemo(() => {
+    if (!activeSuggest) return [];
+    const term = (form[activeSuggest] || '').trim().toLowerCase();
+    if (term.length < 2) return [];
+    return uniqueRecords.filter(r => {
+      const field = (r[activeSuggest] || '').toString().toLowerCase();
+      return field.includes(term);
+    }).slice(0, 8);
+  }, [activeSuggest, form, uniqueRecords]);
+
+  const applySuggestion = (r: LancamentoPix) => {
+    setForm(prev => ({
+      ...prev,
+      nome: r.nome || prev.nome,
+      favorecido: r.favorecido || prev.favorecido,
+      chave_pix: r.chave_pix || prev.chave_pix,
+      cnpj_id: findIdByName(opcoes.cnpj, r.cnpj) || prev.cnpj_id,
+      unidade_id: findIdByName(opcoes.unidade, r.unidade) || prev.unidade_id,
+      centro_de_custo_id: findIdByName(opcoes.centro_de_custo, r.centro_de_custo) || prev.centro_de_custo_id,
+      categoria_id: findIdByName(opcoes.categoria, r.categoria) || prev.categoria_id,
+      secao_custeio_id: findIdByName(opcoes.secao_custeio, r.secao_custeio) || prev.secao_custeio_id,
+      centro_custeio_id: findIdByName(opcoes.centro_custeio, r.centro_custeio) || prev.centro_custeio_id,
+      // mantém data, valor e descrição em branco/inalterados
+    }));
+    setActiveSuggest(null);
+  };
 
   const isValid = requiredFields.every(f => form[f as keyof FormState]?.toString().trim());
 
@@ -153,6 +215,34 @@ export const ComissionamentoFormDialog: React.FC<Props> = ({ open, onClose, onSu
     </div>
   );
 
+  const renderAutocomplete = (field: 'favorecido' | 'chave_pix', label: string, placeholder: string) => (
+    <div className="space-y-1 relative" ref={activeSuggest === field ? suggestRef : undefined}>
+      <Label className="text-sm font-medium">{label} *</Label>
+      <Input
+        placeholder={placeholder}
+        value={form[field]}
+        onChange={e => { set(field, e.target.value); setActiveSuggest(field); }}
+        onFocus={() => setActiveSuggest(field)}
+        autoComplete="off"
+      />
+      {activeSuggest === field && suggestions.length > 0 && (
+        <div className="absolute z-50 top-full left-0 right-0 mt-1 bg-popover border border-border rounded-lg shadow-lg max-h-60 overflow-y-auto">
+          {suggestions.map((r, idx) => (
+            <button
+              key={(r.id || '') + idx}
+              type="button"
+              onClick={() => applySuggestion(r)}
+              className="w-full text-left px-3 py-2 hover:bg-accent text-sm border-b border-border last:border-0"
+            >
+              <div className="font-medium text-foreground">{r.favorecido}</div>
+              <div className="text-xs text-muted-foreground truncate">{r.chave_pix} · {r.unidade || '-'}</div>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+
   return (
     <Dialog open={open} onOpenChange={(v) => { if (!v) onClose(); }}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
@@ -184,15 +274,8 @@ export const ComissionamentoFormDialog: React.FC<Props> = ({ open, onClose, onSu
                 />
               </div>
 
-              <div className="space-y-1">
-                <Label className="text-sm font-medium">Chave PIX *</Label>
-                <Input placeholder="CPF/CNPJ/E-mail/Telefone/Aleatória" value={form.chave_pix} onChange={e => set('chave_pix', e.target.value)} />
-              </div>
-
-              <div className="space-y-1">
-                <Label className="text-sm font-medium">Favorecido *</Label>
-                <Input placeholder="Nome do favorecido" value={form.favorecido} onChange={e => set('favorecido', e.target.value)} />
-              </div>
+              {renderAutocomplete('chave_pix', 'Chave PIX', 'CPF/CNPJ/E-mail/Telefone/Aleatória')}
+              {renderAutocomplete('favorecido', 'Favorecido', 'Nome do favorecido')}
 
               <div className="space-y-1">
                 <Label className="text-sm font-medium">Valor *</Label>

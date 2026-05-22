@@ -295,6 +295,7 @@ export const ComissionamentoFilters: React.FC<Props> = ({
         onClose={() => setFormOpen(false)}
         onSubmit={onManualSubmit}
         opcoes={opcoes}
+        existingRecords={filteredData}
       />
       {isAdmin && (
         <div className="filter-section">
