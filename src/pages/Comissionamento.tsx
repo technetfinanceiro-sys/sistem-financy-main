@@ -14,7 +14,7 @@ import { useAuth } from '@/contexts/useAuth';
 const TABS = [
   { id: 'kpis', label: 'KPIs' },
   { id: 'charts', label: 'Gráficos' },
-  // { id: 'frentes', label: 'Frentes' },
+  { id: 'frentes', label: 'Frentes' },
   { id: 'table', label: 'Dados Detalhados' },
   { id: 'valores', label: 'Valores' },
 ];
