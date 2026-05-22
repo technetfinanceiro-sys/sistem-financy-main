@@ -169,7 +169,7 @@ export const ComissionamentoFormDialog: React.FC<Props> = ({ open, onClose, onSu
           <>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 py-4">
               <div className="space-y-1">
-                <Label className="text-sm font-medium">Data *</Label>
+                <Label className="text-sm font-medium">Data Para Pagamento*</Label>
                 <Input type="date" value={form.data_lancamento} onChange={e => set('data_lancamento', e.target.value)} />
               </div>
 

@@ -18,7 +18,7 @@ const COLUMN_MAP: Record<string, string> = {
     'VALOR': 'valor',
     'UNIDADE': 'unidade',
     'CENTRO DE CUSTO': 'centro_de_custo',
-    'CENTRO DE CUSTEIO': 'centro_de_custo',
+    'CENTRO DE CUSTEIO': 'centro_custeio',
     'CATEGORIA': 'categoria',
     'STATUS': 'status_pag',
     'CNPJ': 'cnpj',
@@ -67,35 +67,70 @@ export const ComissionamentoImportExcel: React.FC<Props> = ({ onImport }) => {
             const raw: any[] = XLSX.utils.sheet_to_json(ws, { defval: null, raw: true });
 
             const mapped: Record<string, any>[] = [];
-            for (const row of raw) {
+            const errosValidacao: string[] = [];
+
+            for (let index = 0; index < raw.length; index++) {
+                const row = raw[index];
+                const linhaExcel = index + 2; // +2 porque a linha 1 é o cabeçalho
+
                 const obj: Record<string, any> = {};
                 let hasAny = false;
+
                 for (const [k, v] of Object.entries(row)) {
                     const norm = normalizeKey(k);
                     const field = COLUMN_MAP[norm];
                     if (!field) continue;
+
                     if (v != null && String(v).trim() !== '') hasAny = true;
                     obj[field] = v;
                 }
+
+                // Linha totalmente vazia pode ser ignorada
                 if (!hasAny) continue;
 
                 const data = excelDateToISO(obj.data);
                 const valor = parseValor(obj.valor);
-                if (!data && !valor && !obj.descricao) continue;
 
-                mapped.push({
-                    data_lancamento: data,
-                    valor,
-                    descricao: obj.descricao ? String(obj.descricao).trim() : null,
-                    banco: obj.banco ? String(obj.banco).trim() : null,
-                    unidade_name: obj.unidade ? String(obj.unidade).trim() : null,
-                    centro_de_custo_name: obj.centro_de_custo ? String(obj.centro_de_custo).trim() : null,
-                    categoria_name: obj.categoria ? String(obj.categoria).trim() : null,
-                    cnpj_name: obj.cnpj ? String(obj.cnpj).trim() : null,
-                    status_pag: obj.status_pag ? String(obj.status_pag).trim() : null,
-                    forma_pagamento: obj.forma_pagamento ? String(obj.forma_pagamento).trim() : null,
-                });
+                const unidade = obj.unidade ? String(obj.unidade).trim() : null;
+                const centroDeCusto = obj.centro_de_custo ? String(obj.centro_de_custo).trim() : null;
+                const categoria = obj.categoria ? String(obj.categoria).trim() : null;
+                const cnpj = obj.cnpj ? String(obj.cnpj).trim() : null;
+
+                const camposFaltando: string[] = [];
+
+                if (!data) camposFaltando.push("DATA");
+                if (valor == null) camposFaltando.push("VALOR");
+                if (!unidade) camposFaltando.push("UNIDADE");
+                if (!centroDeCusto) camposFaltando.push("CENTRO DE CUSTO");
+                if (!categoria) camposFaltando.push("CATEGORIA");
+                if (!cnpj) camposFaltando.push("CNPJ");
+
+                if (camposFaltando.length > 0) {
+                    errosValidacao.push(
+                        `Linha ${linhaExcel}: preencher ${camposFaltando.join(", ")}`
+                    );
+                    continue;
             }
+
+    mapped.push({
+        data_lancamento: data,
+        valor,
+        descricao: obj.descricao ? String(obj.descricao).trim() : null,
+        banco: obj.banco ? String(obj.banco).trim() : null,
+        unidade_name: unidade,
+        centro_de_custo_name: centroDeCusto,
+        categoria_name: categoria,
+        cnpj_name: cnpj,
+        status_pag: obj.status_pag ? String(obj.status_pag).trim() : null,
+        forma_pagamento: obj.forma_pagamento ? String(obj.forma_pagamento).trim() : null,
+    });
+}
+
+if (errosValidacao.length > 0) {
+    throw new Error(
+        `Importação cancelada. Corrija o Excel antes de importar:\n${errosValidacao.join("\n")}`
+    );
+}
 
             if (mapped.length === 0) {
                 setResult({ ok: false, message: 'Nenhuma linha válida encontrada na planilha.' });

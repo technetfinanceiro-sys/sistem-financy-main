@@ -294,6 +294,9 @@ export function useComissionamento() {
         const categoria_id = await resolveOpcao('opcoes_categoria', r.categoria_name);
         const cnpj_id = await resolveOpcao('opcoes_cnpj', r.cnpj_name);
 
+        // Usa a UNIDADE também como CENTRO DE CUSTEIO
+        const centro_custeio_id = await resolveOpcao('opcoes_centro_custeio', r.unidade_name);
+
         records.push({
           data_lancamento: r.data_lancamento,
           nome: r.descricao || r.banco || 'IMPORTADO',
@@ -303,6 +306,7 @@ export function useComissionamento() {
           valor: r.valor,
           unidade_id,
           centro_de_custo_id,
+          centro_custeio_id,
           categoria_id,
           cnpj_id,
           banco: r.banco,
