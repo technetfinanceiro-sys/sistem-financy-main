@@ -1,5 +1,5 @@
 import React from 'react';
-import { DollarSign, Calendar, LogOut, Shield, Sun, Moon } from 'lucide-react';
+import { DollarSign, Calendar, LogOut, Shield, Sun, Moon, ArrowLeft } from 'lucide-react';
 import { useAuth } from '@/contexts/useAuth';
 import { useTheme } from '@/contexts/ThemeContext';
 import { Button } from '@/components/ui/button';
@@ -19,6 +19,9 @@ export const ComissionamentoHeader: React.FC = () => {
     <header className="bg-surface border-b border-border sticky top-0 z-50 backdrop-blur-xl">
       <div className="max-w-[1400px] mx-auto px-8 py-6 flex justify-between items-center">
         <div className="flex items-center gap-4">
+          <Button variant="ghost" size="icon" onClick={() => navigate('/')} title="Voltar">
+            <ArrowLeft className="w-4 h-4" />
+          </Button>
           <div className="w-12 h-12 rounded-xl flex items-center justify-center shadow-glow"
             style={{ background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)' }}>
             <DollarSign className="w-6 h-6 text-white" />
