@@ -7,17 +7,19 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from '@/hooks/use-toast';
-import { Loader2, LogIn, UserPlus, Mail, Lock, User } from 'lucide-react';
+import { Loader2, LogIn, UserPlus, Mail, Lock, User, KeyRound } from 'lucide-react';
 
 export default function Login() {
   const navigate = useNavigate();
-  const { signIn, signUp, user, isLoading: authLoading, isApproved } = useAuth();
+  const { signIn, signUp, requestPasswordReset, user, isLoading: authLoading, isApproved } = useAuth();
   
   const [isLoading, setIsLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState('login');
   
   // Login form
   const [loginEmail, setLoginEmail] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
+  const [forgotEmail, setForgotEmail] = useState('');
   
   // Signup form
   const [signupEmail, setSignupEmail] = useState('');
@@ -39,6 +41,7 @@ export default function Login() {
     setSignupPassword('');
     setSignupConfirmPassword('');
     setDisplayName('');
+    setForgotEmail('');
   }, []);
 
 
@@ -134,6 +137,44 @@ export default function Login() {
     }
   };
   // Mostra loading enquanto verifica autenticação
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    const cleanEmail = forgotEmail.trim();
+    if (!cleanEmail) {
+      toast({
+        title: 'E-mail obrigatório',
+        description: 'Informe o e-mail para receber o link de redefinição.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setIsLoading(true);
+    const result = await requestPasswordReset(cleanEmail);
+    setIsLoading(false);
+
+    if (result.ok) {
+      toast({
+        title: 'Verifique seu e-mail',
+        description: result.message,
+      });
+      setForgotEmail('');
+      setActiveTab('login');
+    } else {
+      toast({
+        title: 'Erro ao enviar link',
+        description: result.message,
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const openForgotPassword = () => {
+    setForgotEmail(loginEmail);
+    setActiveTab('forgot');
+  };
+
   if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -164,9 +205,9 @@ export default function Login() {
         </div>
 
         <Card className="border-border/50 shadow-glow">
-          <Tabs defaultValue="login" className="w-full">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <CardHeader className="pb-4">
-              <TabsList className="grid w-full grid-cols-2">
+              <TabsList className="grid w-full grid-cols-3">
                 <TabsTrigger value="login" className="flex items-center gap-2">
                   <LogIn className="h-4 w-4" />
                   Entrar
@@ -174,6 +215,10 @@ export default function Login() {
                 <TabsTrigger value="signup" className="flex items-center gap-2">
                   <UserPlus className="h-4 w-4" />
                   Cadastrar
+                </TabsTrigger>
+                <TabsTrigger value="forgot" className="flex items-center gap-2">
+                  <KeyRound className="h-4 w-4" />
+                  Recuperar
                 </TabsTrigger>
               </TabsList>
             </CardHeader>
@@ -205,7 +250,18 @@ export default function Login() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="login-password">Senha</Label>
+                    <div className="flex items-center justify-between gap-3">
+                      <Label htmlFor="login-password">Senha</Label>
+                      <Button
+                        type="button"
+                        variant="link"
+                        className="h-auto px-0 py-0 text-xs text-muted-foreground hover:text-primary"
+                        onClick={openForgotPassword}
+                        disabled={isLoading}
+                      >
+                        Esqueci minha senha
+                      </Button>
+                    </div>
                     <div className="relative">
                       <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                       <Input
@@ -332,6 +388,57 @@ export default function Login() {
                   </p>
                 </form>
               </TabsContent>
+
+              {/* Forgot Password Tab */}
+              <TabsContent value="forgot" className="mt-0">
+                <form onSubmit={handleForgotPassword} className="space-y-4">
+                  <CardTitle className="text-xl text-center">Recuperar senha</CardTitle>
+                  <CardDescription>
+                    Digite seu e-mail para receber um link seguro de redefinição.
+                  </CardDescription>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="forgot-email">Email</Label>
+                    <div className="relative">
+                      <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        id="forgot-email"
+                        type="email"
+                        placeholder="seu@email.com"
+                        value={forgotEmail}
+                        onChange={(e) => setForgotEmail(e.target.value)}
+                        className="pl-10"
+                        disabled={isLoading}
+                        autoComplete="email"
+                      />
+                    </div>
+                  </div>
+
+                  <Button type="submit" className="w-full" disabled={isLoading}>
+                    {isLoading ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Enviando...
+                      </>
+                    ) : (
+                      <>
+                        <KeyRound className="mr-2 h-4 w-4" />
+                        Enviar link de recuperação
+                      </>
+                    )}
+                  </Button>
+
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    className="w-full"
+                    onClick={() => setActiveTab('login')}
+                    disabled={isLoading}
+                  >
+                    Voltar para o login
+                  </Button>
+                </form>
+              </TabsContent>
             </CardContent>
           </Tabs>
         </Card>
@@ -339,5 +446,3 @@ export default function Login() {
     </div>
   );
 }
-
-

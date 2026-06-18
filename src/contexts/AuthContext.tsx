@@ -14,6 +14,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const getErrorMessage = (error: unknown, fallback: string) =>
     error instanceof Error ? error.message : fallback;
 
+  const getPasswordResetRedirectUrl = () => (
+    `${window.location.origin}${window.location.pathname}#/redefinir-senha`
+  );
+
   const fetchProfile = useCallback(async (userId: string) => {
     try {
       const { data, error } = await externalSupabase
@@ -187,6 +191,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setProfile(null);
   };
 
+  const requestPasswordReset = async (email: string) => {
+    try {
+      const { error } = await externalSupabase.auth.resetPasswordForEmail(email, {
+        redirectTo: getPasswordResetRedirectUrl(),
+      });
+
+      if (error) throw error;
+
+      return {
+        ok: true,
+        message: 'Se esse e-mail estiver cadastrado, enviaremos um link para redefinir a senha.',
+      };
+    } catch (error: unknown) {
+      console.error('Erro ao solicitar redefinição de senha:', error);
+      return {
+        ok: false,
+        message: getErrorMessage(error, 'Não foi possível enviar o link de redefinição.'),
+      };
+    }
+  };
+
   const isAdmin = profile?.role === 'admin';
   const isApproved = profile?.approved ?? false;
 
@@ -201,6 +226,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         isApproved,
         signUp,
         signIn,
+        requestPasswordReset,
         signOut,
         refreshProfile,
       }}

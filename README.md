@@ -18,7 +18,5 @@ npm run dev
 - shadcn-ui
 - Tailwind CSS
 
-  Imagem de exemplo
-<img width="1439" height="730" alt="image" src="https://github.com/user-attachments/assets/cd63a575-b002-44d7-9606-3a65edeb3e07" />
 
 

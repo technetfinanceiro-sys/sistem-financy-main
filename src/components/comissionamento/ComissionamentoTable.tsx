@@ -110,7 +110,7 @@ export const ComissionamentoTable: React.FC<Props> = ({ data, onUpdate, onDelete
         { content: fmtBRL(totalValor), styles: { fontStyle: 'bold', halign: 'right' } },
       ]],
       styles: { fontSize: 7 },
-      headStyles: { fillColor: [30, 58, 95], textColor: 255 },
+      headStyles: { fillColor: [31, 58, 95], textColor: 255 },
       footStyles: { fillColor: [240, 240, 240], textColor: 30 },
       columnStyles: { 9: { halign: 'right' } },
     });
@@ -127,15 +127,28 @@ export const ComissionamentoTable: React.FC<Props> = ({ data, onUpdate, onDelete
         </Button>
       </div>
       <div className="card overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="data-table w-full">
+        <div className="w-full">
+          <table className="data-table w-full table-fixed text-[11px] [&_th]:px-2 [&_th]:py-2 [&_td]:px-2 [&_td]:py-2 [&_td]:align-top">
+            <colgroup>
+              <col style={{ width: '32px' }} />
+              <col style={{ width: '78px' }} />
+              <col style={{ width: '9%' }} />
+              <col style={{ width: '15%' }} />
+              <col style={{ width: '7%' }} />
+              <col style={{ width: '10%' }} />
+              <col style={{ width: '10%' }} />
+              <col style={{ width: '14%' }} />
+              <col style={{ width: '8%' }} />
+              <col style={{ width: '7%' }} />
+              <col style={{ width: '10%' }} />
+            </colgroup>
             <thead>
               <tr>
                 {columns.map(col => (
                   <th
                     key={col.key as string}
                     onClick={col.key !== 'actions' ? () => handleSort(col.key as keyof LancamentoPix) : undefined}
-                    className={`whitespace-nowrap ${col.key !== 'actions' ? 'cursor-pointer hover:text-primary transition-colors' : 'w-10'}`}
+                    className={`text-left leading-tight ${col.key !== 'actions' ? 'cursor-pointer hover:text-primary transition-colors' : ''}`}
                   >
                     {col.label} {sortField === col.key ? (sortAsc ? '▲' : '▼') : ''}
                   </th>
@@ -145,15 +158,15 @@ export const ComissionamentoTable: React.FC<Props> = ({ data, onUpdate, onDelete
             <tbody>
               {pageData.map((row, i) => (
                 <tr key={row.id || i}>
-                  <td className="w-10">
+                  <td>
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="h-7 w-7 p-0"
+                      className="h-6 w-6 p-0"
                       onClick={() => setEditRecord(row)}
                       title="Editar"
                     >
-                      <Pencil className="w-3.5 h-3.5 text-muted-foreground hover:text-primary" />
+                      <Pencil className="w-3 h-3 text-muted-foreground hover:text-primary" />
                     </Button>
                   </td>
                   <td>{formatDate(row.data_lancamento)}</td>
@@ -166,14 +179,13 @@ export const ComissionamentoTable: React.FC<Props> = ({ data, onUpdate, onDelete
                   <td>{row.banco || '-'}</td>
                   <td>
                     {row.status_pag ? (
-                      <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${
-                        (row.status_pag || '').toUpperCase() === 'PAGO'
-                          ? 'bg-green-500/15 text-green-600 dark:text-green-400'
-                          : 'bg-yellow-500/15 text-yellow-600 dark:text-yellow-400'
-                      }`}>{row.status_pag}</span>
+                      <span className={`inline-block px-1.5 py-0.5 rounded-full text-[10px] font-semibold ${(row.status_pag || '').toUpperCase() === 'PAGO'
+                        ? 'bg-green-500/15 text-green-600 dark:text-green-400'
+                        : 'bg-yellow-500/15 text-yellow-600 dark:text-yellow-400'
+                        }`}>{row.status_pag}</span>
                     ) : '-'}
                   </td>
-                  <td className="font-semibold">{fmtBRL(row.valor)}</td>
+                  <td className="font-semibold whitespace-nowrap text-right">{fmtBRL(row.valor)}</td>
                 </tr>
               ))}
               {pageData.length === 0 && (

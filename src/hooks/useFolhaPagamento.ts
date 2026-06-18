@@ -15,9 +15,13 @@ export interface DadoFinanceiro {
     ferias: number;
     decimo_terceiro: number;
     periculosidade: number;
+    hora_extra_50: number;
     hora_extra_60: number;
+    hora_extra_70: number;
     hora_extra_100: number;
     dsr: number;
+    sal_maternidade: number;
+    vale_transporte: number;
     desc_plano_saude: number;
     desc_odonto: number;
     desc_faltas: number;
@@ -25,22 +29,47 @@ export interface DadoFinanceiro {
     contribuicao: number;
     desc_pensao: number;
     dif_salario: number;
+    emprestimo: number;
+    desc_fardamento: number;
     total_proventos: number;
     total_descontos: number;
     salario_liquido: number;
 }
 
+// Mapa: label exibido no filtro -> coluna do banco
+export const VERBA_FIELDS: { label: string; field: keyof DadoFinanceiro }[] = [
+    { label: 'Férias', field: 'ferias' },
+    { label: '13° Salário', field: 'decimo_terceiro' },
+    { label: 'Periculosidade', field: 'periculosidade' },
+    { label: 'Hora extra 50%', field: 'hora_extra_50' },
+    { label: 'Hora extra 60%', field: 'hora_extra_60' },
+    { label: 'Hora extra 70%', field: 'hora_extra_70' },
+    { label: 'Hora extra 100%', field: 'hora_extra_100' },
+    { label: 'DSR', field: 'dsr' },
+    { label: 'Sal. Maternidade', field: 'sal_maternidade' },
+    { label: 'Vale transporte', field: 'vale_transporte' },
+    { label: 'Desc plano saúde', field: 'desc_plano_saude' },
+    { label: 'Desc odonto', field: 'desc_odonto' },
+    { label: 'Desc faltas', field: 'desc_faltas' },
+    { label: 'Desc adiantamento', field: 'desc_adiantamento' },
+    { label: 'Contribuição', field: 'contribuicao' },
+    { label: 'Desc Pensão', field: 'desc_pensao' },
+    { label: 'Dif. Salário', field: 'dif_salario' },
+    { label: 'Empréstimo', field: 'emprestimo' },
+    { label: 'Desc fardamento', field: 'desc_fardamento' },
+];
+
 export interface FolhaFilters {
     dataInicio: string;
     dataFim: string;
     categoria: string[]; // setor
-    cnpj: string[];      // placeholder
+    verbas: string[]; // labels selecionadas em VERBA_FIELDS
     unidade: string[];   // placeholder
     nome: string[];      // placeholder
 }
 
 const EMPTY_FILTERS: FolhaFilters = {
-    dataInicio: '', dataFim: '', categoria: [], cnpj: [], unidade: [], nome: [],
+    dataInicio: '', dataFim: '', categoria: [], verbas: [], unidade: [], nome: [],
 };
 
 export function useFolhaPagamento() {
@@ -85,6 +114,10 @@ export function useFolhaPagamento() {
         if (filters.dataFim) r = r.filter(x => x.data && x.data <= filters.dataFim);
         if (filters.categoria.length) r = r.filter(x => filters.categoria.includes(x.setor || ''));
         if (filters.nome.length) r = r.filter(x => filters.nome.includes(x.nome || ''));
+        if (filters.verbas.length) {
+            const fields = VERBA_FIELDS.filter(v => filters.verbas.includes(v.label)).map(v => v.field);
+            r = r.filter(x => fields.some(f => (Number(x[f]) || 0) !== 0));
+        }
         return r;
     }, [data, filters]);
 

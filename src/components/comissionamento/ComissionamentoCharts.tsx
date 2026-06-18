@@ -5,6 +5,7 @@ import {
 } from 'recharts';
 import { BarChart3, PieChart as PieIcon, TrendingUp } from 'lucide-react';
 import { TechnicianChartData, RankingData, FrenteKPIData } from '@/types/comissionamento';
+import { chartTooltipContentStyle, chartTooltipCursor, chartTooltipItemStyle, chartTooltipLabelStyle } from '@/lib/chartTooltip';
 
 interface Props {
   chartData: TechnicianChartData[];   // por unidade
@@ -72,12 +73,10 @@ export const ComissionamentoCharts: React.FC<Props> = ({ chartData, frentesData 
                 <YAxis yAxisId="left" tick={{ fill: 'hsl(223 16% 70%)', fontSize: 11 }} />
                 <YAxis yAxisId="right" orientation="right" tick={{ fill: 'hsl(223 16% 70%)', fontSize: 11 }} />
                 <Tooltip
-                  contentStyle={{
-                    backgroundColor: 'hsla(0, 25%, 66%, 1.00)',
-                    border: '1px solid hsl(232 32% 22%)',
-                    borderRadius: '8px',
-                    color: 'white'
-                  }}
+                  contentStyle={chartTooltipContentStyle}
+                  cursor={chartTooltipCursor}
+                  itemStyle={chartTooltipItemStyle}
+                  labelStyle={chartTooltipLabelStyle}
                   formatter={(value: number, name: string) => {
                     if (name === 'Total R$') return [fmtBRL(value), name];
                     if (name === 'Lançamentos') return [value.toLocaleString('pt-BR'), name];
@@ -128,13 +127,11 @@ export const ComissionamentoCharts: React.FC<Props> = ({ chartData, frentesData 
                     ))}
                   </Pie>
                   <Tooltip
-                    contentStyle={{
-                      backgroundColor: 'hsla(0, 20%, 58%, 1.00)',
-                      border: '1px solid hsla(0, 2%, 9%, 1.00)',
-                      borderRadius: '8px',
-                      color: 'white'
-                    }}
-                    formatter={(value: number) => fmtBRL(value)}
+                    contentStyle={chartTooltipContentStyle}
+                    itemStyle={chartTooltipItemStyle}
+                    labelStyle={chartTooltipLabelStyle}
+                    formatter={(value: number, _name: string, item: any) => [fmtBRL(value), item.payload.name]}
+                    labelFormatter={() => 'Categoria'}
                   />
                 </PieChart>
               </ResponsiveContainer>
@@ -184,12 +181,10 @@ export const ComissionamentoCharts: React.FC<Props> = ({ chartData, frentesData 
                 <YAxis yAxisId="left" tick={{ fill: 'hsl(223 16% 70%)', fontSize: 11 }} tickFormatter={(v) => fmtCompact(v)} />
                 <YAxis yAxisId="right" orientation="right" tick={{ fill: 'hsl(223 16% 70%)', fontSize: 11 }} tickFormatter={(v) => fmtCompact(v)} />
                 <Tooltip
-                  contentStyle={{
-                    backgroundColor: 'rgb(136, 15, 15)',
-                    border: '1px solid hsla(220, 4%, 17%, 1.00)',
-                    borderRadius: '8px',
-                    color: 'white'
-                  }}
+                  contentStyle={chartTooltipContentStyle}
+                  cursor={chartTooltipCursor}
+                  itemStyle={chartTooltipItemStyle}
+                  labelStyle={chartTooltipLabelStyle}
                   formatter={(value: number, name: string) => {
                     if (name === 'Despesa Total') return [fmtBRL(value), name];
                     if (name === 'Ticket Médio') return [fmtBRL(value), name];

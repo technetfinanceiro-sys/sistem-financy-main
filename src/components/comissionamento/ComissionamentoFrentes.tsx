@@ -2,6 +2,7 @@ import React from 'react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend, LabelList } from 'recharts';
 import { Tags, Building2, Banknote, Users } from 'lucide-react';
 import { FrenteKPIData } from '@/types/comissionamento';
+import { chartTooltipContentStyle, chartTooltipCursor, chartTooltipItemStyle, chartTooltipLabelStyle } from '@/lib/chartTooltip';
 
 interface Props {
   frentesData: FrenteKPIData[];
@@ -105,12 +106,10 @@ export const ComissionamentoFrentes: React.FC<Props> = ({ frentesData, selectedF
                 />
                 <YAxis tick={{ fill: 'hsl(223 16% 70%)', fontSize: 11 }} />
                 <Tooltip
-                  contentStyle={{
-                    backgroundColor: 'hsl(231 45% 11%)',
-                    border: '1px solid hsl(232 32% 22%)',
-                    borderRadius: '8px',
-                    color: 'white'
-                  }}
+                  contentStyle={chartTooltipContentStyle}
+                  cursor={chartTooltipCursor}
+                  itemStyle={chartTooltipItemStyle}
+                  labelStyle={chartTooltipLabelStyle}
                   formatter={(value: number, name: string) => {
                     if (name === 'Total R$') return [`R$ ${value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, name];
                     if (name === 'valor') return [fmtBRL(value), 'Total'];

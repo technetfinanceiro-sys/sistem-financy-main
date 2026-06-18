@@ -2,7 +2,6 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-//Navigate
 import { HashRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
@@ -10,9 +9,11 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 import Login from "./pages/Login";
 import Admin from "./pages/Admin";
 import Comissionamento from "./pages/Comissionamento";
+import AppLayout from "@/components/layout/AppLayout";
 import NotFound from "./pages/NotFound";
-import Home from "./pages/Home";
+import Perfil from "./pages/Perfil";
 import FolhaPagamento from "./pages/FolhaPagamento";
+import ResetPassword from "./pages/ResetPassword";
 
 const queryClient = new QueryClient();
 
@@ -27,6 +28,7 @@ const App = () => (
           <HashRouter basename="/">
             <Routes>
               <Route path="/login" element={<Login />} />
+              <Route path="/redefinir-senha" element={<ResetPassword />} />
               <Route
                 path="/pagamentos"
                 element={
@@ -35,30 +37,42 @@ const App = () => (
                   </ProtectedRoute>
                 }
               />
-                <Route
-              path="/folha-pagamento"
-              element={
-                <ProtectedRoute requireAdmin>
-                  <FolhaPagamento />
-                </ProtectedRoute>
-              }
-            />
               <Route
                 path="/"
                 element={
                   <ProtectedRoute>
-                    <Home />
+                    <AppLayout />
                   </ProtectedRoute>
                 }
-              />
-              <Route
-                path="/admin"
-                element={
-                  <ProtectedRoute requireAdmin>
-                    <Admin />
-                  </ProtectedRoute>
-                }
-              />
+              >
+                <Route path="/" element={<Navigate to="/comissionamento" replace />} />
+                <Route path="/comissionamento" element={<Comissionamento />} />
+                <Route path="/perfil" element={<Perfil />} />
+                <Route
+                  path="/folha-pagamento"
+                  element={
+                    <ProtectedRoute requireAdmin>
+                      <FolhaPagamento />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/admin"
+                  element={
+                    <ProtectedRoute requireAdmin>
+                      <Admin />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/configuracoes"
+                  element={
+                    <ProtectedRoute requireAdmin>
+                      <Admin />
+                    </ProtectedRoute>
+                  }
+                />
+              </Route>
               <Route path="*" element={<NotFound />} />
             </Routes>
           </HashRouter>

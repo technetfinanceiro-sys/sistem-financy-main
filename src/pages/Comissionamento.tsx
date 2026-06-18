@@ -1,27 +1,20 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useComissionamento } from '@/hooks/useComissionamento';
-import { ComissionamentoHeader } from '@/components/comissionamento/ComissionamentoHelder';
 import { ComissionamentoFilters } from '@/components/comissionamento/ComissionamentoFilters';
 import { ComissionamentoKPIs } from '@/components/comissionamento/ComissionamentoKPIs';
 import { ComissionamentoCharts } from '@/components/comissionamento/ComissionamentoCharts';
 import { ComissionamentoTable } from '@/components/comissionamento/ComissionamentoTable';
 import { ComissionamentoFrentes } from '@/components/comissionamento/ComissionamentoFrentes';
 import { ComissionamentoValores } from '@/components/comissionamento/ComissionamentoValores';
-import { TabNavigation } from '@/components/comissionamento/TabNavigation';
 import { LoadingSpinner } from '@/components/comissionamento/LoadingSpinner';
 import { useAuth } from '@/contexts/useAuth';
-
-const TABS = [
-  { id: 'kpis', label: 'KPIs' },
-  { id: 'charts', label: 'Gráficos' },
-  { id: 'frentes', label: 'Frentes' },
-  { id: 'table', label: 'Dados Detalhados' },
-  { id: 'valores', label: 'Valores' },
-];
+import { DollarSign } from 'lucide-react';
 
 const Comissionamento: React.FC = () => {
   const hook = useComissionamento();
-  const [activeTab, setActiveTab] = useState('kpis');
+  const [params] = useSearchParams();
+  const activeTab = params.get('tab') || 'kpis';
   const { isAdmin } = useAuth();
 
   useEffect(() => {
@@ -32,10 +25,21 @@ const Comissionamento: React.FC = () => {
   const hasData = hook.allData.length > 0;
 
   return (
-    <div className="min-h-screen bg-background">
-      <ComissionamentoHeader />
+    <div className="min-h-full">
+      <div className="max-w-[1400px] mx-auto p-6 md:p-8 space-y-6">
+        <div className="flex items-center gap-3">
+          <div
+            className="w-11 h-11 rounded-xl flex items-center justify-center shadow-glow"
+            style={{ background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)' }}
+          >
+            <DollarSign className="w-5 h-5 text-white" />
+          </div>
+          <div>
+            <h1 className="text-xl md:text-2xl font-extrabold text-foreground">SOLICITAÇÃO DE PAGAMENTO</h1>
+            <p className="text-sm text-muted-foreground">Controle de Pagamento</p>
+          </div>
+        </div>
 
-      <main className="max-w-[1400px] mx-auto p-8 space-y-8">
         {hook.error && (
           <div className="alert alert-error">
             <span>⚠️ {hook.error}</span>
@@ -61,31 +65,27 @@ const Comissionamento: React.FC = () => {
         )}
 
         {hasData && isAdmin && (
-          <>
-            <TabNavigation tabs={TABS} activeTab={activeTab} onTabChange={setActiveTab} />
-
-            <div className="tab-content" style={{ position: 'relative', zIndex: 1 }}>
-              {activeTab === 'kpis' && <ComissionamentoKPIs kpis={hook.kpis} />}
-              {activeTab === 'charts' && (
-                <ComissionamentoCharts chartData={hook.chartData} ranking={hook.ranking} frentesData={hook.frentesData} />
-              )}
-              {activeTab === 'frentes' && (
-                <ComissionamentoFrentes
-                  frentesData={hook.frentesData}
-                  selectedFrente={hook.filters.frente[0] || ''}
-                />
-              )}
-              {activeTab === 'table' && (
-                <ComissionamentoTable
-                  data={hook.data}
-                  onUpdate={hook.updateRecord}
-                  onDelete={hook.deleteRecord}
-                  opcoes={hook.opcoes}
-                />
-              )}
-              {activeTab === 'valores' && <ComissionamentoValores data={hook.data} />}
-            </div>
-          </>
+          <div className="tab-content">
+            {activeTab === 'kpis' && <ComissionamentoKPIs kpis={hook.kpis} />}
+            {activeTab === 'charts' && (
+              <ComissionamentoCharts chartData={hook.chartData} ranking={hook.ranking} frentesData={hook.frentesData} />
+            )}
+            {activeTab === 'frentes' && (
+              <ComissionamentoFrentes
+                frentesData={hook.frentesData}
+                selectedFrente={hook.filters.frente[0] || ''}
+              />
+            )}
+            {activeTab === 'table' && (
+              <ComissionamentoTable
+                data={hook.data}
+                onUpdate={hook.updateRecord}
+                onDelete={hook.deleteRecord}
+                opcoes={hook.opcoes}
+              />
+            )}
+            {activeTab === 'valores' && <ComissionamentoValores data={hook.data} />}
+          </div>
         )}
 
         {!hook.isLoading && !hasData && !hook.error && (
@@ -95,7 +95,7 @@ const Comissionamento: React.FC = () => {
             </p>
           </div>
         )}
-      </main>
+      </div>
     </div>
   );
 };

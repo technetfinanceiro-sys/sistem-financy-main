@@ -1,18 +1,17 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
-import { Wallet, Calendar, LogOut, Shield, Sun, Moon, Download, ArrowLeft, RefreshCw } from 'lucide-react';
+import { Wallet, Download, RefreshCw } from 'lucide-react';
 import * as XLSX from 'xlsx';
-import { useAuth } from '@/contexts/useAuth';
-import { useTheme } from '@/contexts/ThemeContext';
-import { TabNavigation } from '@/components/comissionamento/TabNavigation';
+
 import { LoadingSpinner } from '@/components/comissionamento/LoadingSpinner';
-import { useFolhaPagamento } from '@/hooks/useFolhaPagamento';
+import { useFolhaPagamento, VERBA_FIELDS } from '@/hooks/useFolhaPagamento';
 import { FolhaImportExcel } from '@/components/folha/FolhaImportExcel';
 import { FolhaKPIs } from '@/components/folha/FolhaKPIs';
 import { FolhaCharts } from '@/components/folha/FolhaCharts';
 import { FolhaFrentes } from '@/components/folha/FolhaFrentes';
+import { FolhaTable } from '@/components/folha/FolhaTable';
 
 interface MultiSelectProps {
   label: string;
@@ -79,11 +78,8 @@ const TABS = [
 ];
 
 const FolhaPagamento: React.FC = () => {
-  const navigate = useNavigate();
-  const { signOut } = useAuth();
-  const { theme, toggleTheme } = useTheme();
-  const [activeTab, setActiveTab] = useState('kpis');
-
+  const [params] = useSearchParams();
+  const activeTab = params.get('tab') || 'kpis';
   const {
     data, isLoading, error, filters, setFilters, clearFilters,
     fetchData, importExcel, opcoesCategoria, opcoesNomes, kpis
@@ -108,9 +104,13 @@ const FolhaPagamento: React.FC = () => {
       'Férias': r.ferias,
       '13° Salário': r.decimo_terceiro,
       Periculosidade: r.periculosidade,
+      'Hora extra 50%': r.hora_extra_50,
       'Hora extra 60%': r.hora_extra_60,
+      'Hora extra 70%': r.hora_extra_70,
       'Hora extra 100%': r.hora_extra_100,
       DSR: r.dsr,
+      'Sal. Maternidade': r.sal_maternidade,
+      'Vale transporte': r.vale_transporte,
       'Desc plano saúde': r.desc_plano_saude,
       'Desc odonto': r.desc_odonto,
       'Desc faltas': r.desc_faltas,
@@ -118,6 +118,8 @@ const FolhaPagamento: React.FC = () => {
       'Contribuição': r.contribuicao,
       'Desc Pensão': r.desc_pensao,
       'Dif. Salário': r.dif_salario,
+      'Empréstimo': r.emprestimo,
+      'Desc fardamento': r.desc_fardamento,
       'T. Proventos': r.total_proventos,
       'T. Descontos': r.total_descontos,
       'Salário líquido': r.salario_liquido,
@@ -129,45 +131,19 @@ const FolhaPagamento: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="bg-surface border-b border-border sticky top-0 z-50 backdrop-blur-xl">
-        <div className="max-w-[1400px] mx-auto px-8 py-6 flex justify-between items-center">
-          <div className="flex items-center gap-4">
-            <Button variant="ghost" size="icon" onClick={() => navigate('/')} title="Voltar">
-              <ArrowLeft className="w-4 h-4" />
-            </Button>
-            <div className="w-12 h-12 rounded-xl flex items-center justify-center shadow-glow"
-              style={{ background: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)' }}>
-              <Wallet className="w-6 h-6 text-white" />
-            </div>
-            <div>
-              <h1 className="text-2xl font-extrabold text-foreground">Folha de Pagamento</h1>
-              <p className="text-sm text-muted-foreground font-medium">Gestão e análise da folha</p>
-            </div>
+    <div className="min-h-full">
+      <div className="max-w-[1400px] mx-auto p-6 md:p-8 space-y-6">
+        <div className="flex items-center gap-3">
+          <div className="w-11 h-11 rounded-xl flex items-center justify-center shadow-glow"
+            style={{ background: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)' }}>
+            <Wallet className="w-5 h-5 text-white" />
           </div>
-          <div className="flex items-center gap-2">
-            <div className="flex items-center gap-2 text-muted-foreground text-sm mr-2">
-              <Calendar className="w-4 h-4" />
-              <span className="capitalize">
-                {new Date().toLocaleDateString('pt-BR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
-              </span>
-            </div>
-            <Button variant="ghost" size="sm" onClick={() => navigate('/admin')} className="gap-2">
-              <Shield className="w-4 h-4" /> Admin
-            </Button>
-            <Button variant="ghost" size="icon" onClick={toggleTheme}>
-              {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-            </Button>
-            <Button variant="ghost" size="sm"
-              onClick={async () => { await signOut(); navigate('/login'); }}
-              className="gap-2 text-destructive hover:text-destructive hover:bg-destructive/10">
-              <LogOut className="w-4 h-4" /> Sair
-            </Button>
+          <div>
+            <h1 className="text-xl md:text-2xl font-extrabold text-foreground">Folha de Pagamento</h1>
+            <p className="text-sm text-muted-foreground">Gestão e análise da folha</p>
           </div>
         </div>
-      </header>
 
-      <main className="max-w-[1400px] mx-auto p-8 space-y-8">
         <div className="card" style={{ position: 'relative', zIndex: 10 }}>
           <div className="flex flex-wrap justify-between items-center mb-4 gap-3">
             <h3 className="text-lg font-bold text-foreground">Filtros</h3>
@@ -205,7 +181,7 @@ const FolhaPagamento: React.FC = () => {
               />
             </div>
             <MultiSelect label="Categoria (Setor)" options={opcoesCategoria} selected={filters.categoria} onChange={v => setFilters({ categoria: v })} />
-            <MultiSelect label="CNPJ" options={[]} selected={filters.cnpj} onChange={v => setFilters({ cnpj: v })} />
+            <MultiSelect label="Verba" options={VERBA_FIELDS.map(v => v.label)} selected={filters.verbas} onChange={v => setFilters({ verbas: v })} />
             <MultiSelect label="Nome" options={opcoesNomes} selected={filters.nome} onChange={v => setFilters({ nome: v })} />
           </div>
         </div>
@@ -214,18 +190,18 @@ const FolhaPagamento: React.FC = () => {
           <div className="card text-destructive">Erro ao carregar dados: {error}</div>
         )}
 
-        <TabNavigation tabs={TABS} activeTab={activeTab} onTabChange={setActiveTab} />
 
         {isLoading ? (
           <LoadingSpinner />
         ) : (
           <div className="tab-content">
             {activeTab === 'kpis' && <FolhaKPIs kpis={kpis} />}
-            {activeTab === 'charts' && <FolhaCharts porSetor={kpis.porSetor} />}
+            {activeTab === 'charts' && <FolhaCharts porSetor={kpis.porSetor} data={data} />}
             {activeTab === 'frentes' && <FolhaFrentes porSetor={kpis.porSetor} />}
+            {activeTab === 'table' && <FolhaTable data={data} />}
           </div>
         )}
-      </main>
+      </div>
     </div>
   );
 };

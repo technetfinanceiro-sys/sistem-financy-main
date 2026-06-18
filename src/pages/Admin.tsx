@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { useTheme } from '@/contexts/ThemeContext';
+
 import {
   Table,
   TableBody,
@@ -30,11 +30,8 @@ import {
   Users,
   UserCheck,
   Clock,
-  ArrowLeft,
   RefreshCw,
   Shield,
-  Sun,
-  Moon,
 } from 'lucide-react';
 
 interface PendingUser {
@@ -57,7 +54,6 @@ interface AllUser {
 export default function Admin() {
   const navigate = useNavigate();
   const { isAdmin, isLoading: authLoading, user } = useAuth();
-  const { theme, toggleTheme } = useTheme();
 
   const [pendingUsers, setPendingUsers] = useState<PendingUser[]>([]);
   const [allUsers, setAllUsers] = useState<AllUser[]>([]);
@@ -237,33 +233,20 @@ export default function Admin() {
   }
 
   return (
-    <div className="min-h-screen p-6">
+    <div className="min-h-full p-6">
       <div className="max-w-6xl mx-auto space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Button variant="outline" size="icon" onClick={() => navigate('/')}>
-              <ArrowLeft className="h-4 w-4" />
-            </Button>
-            <div>
-              <h1 className="text-2xl font-bold flex items-center gap-2">
-                <Shield className="h-6 w-6 text-primary" />
-                Painel Administrativo
-              </h1>
-              <p className="text-muted-foreground">
-                Gerencie usuários e aprovações
-              </p>
-            </div>
+          <div>
+            <h1 className="text-2xl font-bold flex items-center gap-2">
+              <Shield className="h-6 w-6 text-primary" />
+              Configurações
+            </h1>
+            <p className="text-muted-foreground">
+              Gerencie usuários e aprovações
+            </p>
           </div>
           <div className="flex items-center gap-2">
-            <Button
-              onClick={toggleTheme}
-              variant="outline"
-              size="icon"
-              title={theme === 'dark' ? 'Mudar para tema claro' : 'Mudar para tema escuro'}
-            >
-              {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-            </Button>
             <Button onClick={fetchUsers} variant="outline" className="gap-2">
               <RefreshCw className="h-4 w-4" />
               Atualizar
