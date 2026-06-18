@@ -34,11 +34,19 @@ const formatDate = (val: string | null) => {
 const fmtBRL = (v: number | null) =>
   v != null ? `R$ ${v.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '-';
 
+const renderBreakableText = (value: string) =>
+  value.split(/([/-])/).map((part, index) => (
+    part === '/' || part === '-'
+      ? <React.Fragment key={`${part}-${index}`}>{part}<wbr /></React.Fragment>
+      : part
+  ));
+
 export const ComissionamentoTable: React.FC<Props> = ({ data, onUpdate, onDelete, opcoes }) => {
   const [page, setPage] = useState(0);
   const [sortField, setSortField] = useState<keyof LancamentoPix>('data_lancamento');
   const [sortAsc, setSortAsc] = useState(false);
   const [editRecord, setEditRecord] = useState<LancamentoPix | null>(null);
+  const wrappedCellClass = 'whitespace-normal break-words leading-snug';
 
   const sorted = useMemo(() => {
     const arr = [...data];
@@ -63,7 +71,10 @@ export const ComissionamentoTable: React.FC<Props> = ({ data, onUpdate, onDelete
 
   const handleSort = (field: keyof LancamentoPix) => {
     if (sortField === field) setSortAsc(!sortAsc);
-    else { setSortField(field); setSortAsc(true); }
+    else {
+      setSortField(field);
+      setSortAsc(true);
+    }
   };
 
   const columns: { key: keyof LancamentoPix | 'actions'; label: string }[] = [
@@ -79,6 +90,7 @@ export const ComissionamentoTable: React.FC<Props> = ({ data, onUpdate, onDelete
     { key: 'status_pag', label: 'Status' },
     { key: 'valor', label: 'Valor' },
   ];
+
   const totalValor = useMemo(() => sorted.reduce((s, r) => s + (r.valor || 0), 0), [sorted]);
 
   const exportPDF = () => {
@@ -126,33 +138,39 @@ export const ComissionamentoTable: React.FC<Props> = ({ data, onUpdate, onDelete
           Exportar PDF
         </Button>
       </div>
+
       <div className="card overflow-hidden">
-        <div className="w-full">
-          <table className="data-table w-full table-fixed text-[11px] [&_th]:px-2 [&_th]:py-2 [&_td]:px-2 [&_td]:py-2 [&_td]:align-top">
+        <div className="w-full overflow-x-auto">
+          <table className="data-table min-w-[1264px] w-full table-fixed text-[11px] [&_th]:px-3 [&_th]:py-3 [&_td]:px-3 [&_td]:py-3 [&_td]:align-top">
             <colgroup>
-              <col style={{ width: '32px' }} />
+              <col style={{ width: '40px' }} />
+              <col style={{ width: '88px' }} />
+              <col style={{ width: '108px' }} />
+              <col style={{ width: '190px' }} />
+              <col style={{ width: '100px' }} />
+              <col style={{ width: '125px' }} />
+              <col style={{ width: '120px' }} />
+              <col style={{ width: '185px' }} />
+              <col style={{ width: '110px' }} />
               <col style={{ width: '78px' }} />
-              <col style={{ width: '9%' }} />
-              <col style={{ width: '15%' }} />
-              <col style={{ width: '7%' }} />
-              <col style={{ width: '10%' }} />
-              <col style={{ width: '10%' }} />
-              <col style={{ width: '14%' }} />
-              <col style={{ width: '8%' }} />
-              <col style={{ width: '7%' }} />
-              <col style={{ width: '10%' }} />
+              <col style={{ width: '120px' }} />
             </colgroup>
             <thead>
               <tr>
-                {columns.map(col => (
-                  <th
-                    key={col.key as string}
-                    onClick={col.key !== 'actions' ? () => handleSort(col.key as keyof LancamentoPix) : undefined}
-                    className={`text-left leading-tight ${col.key !== 'actions' ? 'cursor-pointer hover:text-primary transition-colors' : ''}`}
-                  >
-                    {col.label} {sortField === col.key ? (sortAsc ? '▲' : '▼') : ''}
-                  </th>
-                ))}
+                {columns.map(col => {
+                  const isSortable = col.key !== 'actions';
+                  const sortIndicator = sortField === col.key ? (sortAsc ? '▲' : '▼') : '';
+
+                  return (
+                    <th
+                      key={col.key as string}
+                      onClick={isSortable ? () => handleSort(col.key as keyof LancamentoPix) : undefined}
+                      className={`text-left leading-tight whitespace-normal break-words ${isSortable ? 'cursor-pointer hover:text-primary transition-colors' : ''}`}
+                    >
+                      {renderBreakableText(col.label)} {sortIndicator}
+                    </th>
+                  );
+                })}
               </tr>
             </thead>
             <tbody>
@@ -169,14 +187,14 @@ export const ComissionamentoTable: React.FC<Props> = ({ data, onUpdate, onDelete
                       <Pencil className="w-3 h-3 text-muted-foreground hover:text-primary" />
                     </Button>
                   </td>
-                  <td>{formatDate(row.data_lancamento)}</td>
-                  <td>{row.unidade || '-'}</td>
-                  <td className="font-medium">{row.favorecido || '-'}</td>
-                  <td className="text-xs text-muted-foreground max-w-[180px] truncate" title={row.chave_pix || ''}>{row.chave_pix || '-'}</td>
-                  <td>{row.centro_custeio || '-'}</td>
-                  <td>{row.centro_de_custo || '-'}</td>
-                  <td>{row.categoria || '-'}</td>
-                  <td>{row.banco || '-'}</td>
+                  <td className="whitespace-nowrap">{formatDate(row.data_lancamento)}</td>
+                  <td className={wrappedCellClass}>{row.unidade || '-'}</td>
+                  <td className={`font-medium ${wrappedCellClass}`}>{row.favorecido || '-'}</td>
+                  <td className="text-xs text-muted-foreground truncate" title={row.chave_pix || ''}>{row.chave_pix || '-'}</td>
+                  <td className={wrappedCellClass}>{row.centro_custeio || '-'}</td>
+                  <td className={wrappedCellClass}>{row.centro_de_custo || '-'}</td>
+                  <td className={wrappedCellClass}>{row.categoria ? renderBreakableText(row.categoria) : '-'}</td>
+                  <td className={wrappedCellClass}>{row.banco || '-'}</td>
                   <td>
                     {row.status_pag ? (
                       <span className={`inline-block px-1.5 py-0.5 rounded-full text-[10px] font-semibold ${(row.status_pag || '').toUpperCase() === 'PAGO'
