@@ -132,22 +132,22 @@ export const ComissionamentoFormDialog: React.FC<Props> = ({ open, onClose, onSu
 
   useEffect(() => {
     if (!open) return;
-    (async () => {
-      const { data: rows, error: err } = await externalSupabase
-        .from('registros_dados')
-        .select('id, nome, cpf, setor')
-        .order('nome', { ascending: true });
-      if (!err && rows) setRegistros(rows as RegistroDados[]);
-    })();
-  }, [open]);
+    const term = cpfQuery.trim();
+    if (term.length < 2) { setRegistros([]); return; }
+    let cancelled = false;
+    const t = setTimeout(async () => {
+      const { data, error: err } = await externalSupabase
+        .rpc('buscar_registros_dados', { termo: term });
+      if (!cancelled && !err && Array.isArray(data)) {
+        setRegistros(data as RegistroDados[]);
+      }
+    }, 250);
+    return () => { cancelled = true; clearTimeout(t); };
+  }, [open, cpfQuery]);
 
   const cpfSuggestions = useMemo(() => {
-    const term = cpfQuery.trim().toLowerCase();
-    if (term.length < 2) return [];
-    return registros.filter(r =>
-      (r.cpf || '').toLowerCase().includes(term.replace(/\D/g, '')) ||
-      (r.nome || '').toLowerCase().includes(term)
-    ).slice(0, 8);
+    if (cpfQuery.trim().length < 2) return [];
+    return registros.slice(0, 8);
   }, [cpfQuery, registros]);
 
   const applyRegistro = (r: RegistroDados) => {
