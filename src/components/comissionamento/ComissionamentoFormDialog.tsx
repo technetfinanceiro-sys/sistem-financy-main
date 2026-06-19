@@ -6,6 +6,20 @@ import { Label } from '@/components/ui/label';
 import { Loader2, CheckCircle } from 'lucide-react';
 import { LancamentoPix, OpcaoSelect } from '@/types/comissionamento';
 import { useAuth } from '@/contexts/useAuth';
+import { externalSupabase } from '@/integrations/supabase/externalClient';
+
+interface RegistroDados {
+  id: string;
+  nome: string;
+  cpf: string;
+  setor: string | null;
+}
+
+const formatCpf = (cpf: string): string => {
+  const d = (cpf || '').replace(/\D/g, '');
+  if (d.length !== 11) return cpf;
+  return `${d.slice(0, 3)}.${d.slice(3, 6)}.${d.slice(6, 9)}-${d.slice(9)}`;
+};
 
 interface OpcoesData {
   cnpj: OpcaoSelect[];
@@ -110,8 +124,42 @@ export const ComissionamentoFormDialog: React.FC<Props> = ({ open, onClose, onSu
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState('');
-  const [activeSuggest, setActiveSuggest] = useState<'favorecido' | 'chave_pix' | null>(null);
+  const [activeSuggest, setActiveSuggest] = useState<'favorecido' | 'chave_pix' | 'cpf_cadastro' | null>(null);
   const suggestRef = useRef<HTMLDivElement>(null);
+
+  const [cpfQuery, setCpfQuery] = useState('');
+  const [registros, setRegistros] = useState<RegistroDados[]>([]);
+
+  useEffect(() => {
+    if (!open) return;
+    (async () => {
+      const { data: rows, error: err } = await externalSupabase
+        .from('registros_dados')
+        .select('id, nome, cpf, setor')
+        .order('nome', { ascending: true });
+      if (!err && rows) setRegistros(rows as RegistroDados[]);
+    })();
+  }, [open]);
+
+  const cpfSuggestions = useMemo(() => {
+    const term = cpfQuery.trim().toLowerCase();
+    if (term.length < 2) return [];
+    return registros.filter(r =>
+      (r.cpf || '').toLowerCase().includes(term.replace(/\D/g, '')) ||
+      (r.nome || '').toLowerCase().includes(term)
+    ).slice(0, 8);
+  }, [cpfQuery, registros]);
+
+  const applyRegistro = (r: RegistroDados) => {
+    setForm(prev => ({
+      ...prev,
+      favorecido: r.nome || prev.favorecido,
+      chave_pix: r.cpf || prev.chave_pix,
+      nome: prev.nome || r.nome,
+    }));
+    setCpfQuery(`${r.nome} — ${formatCpf(r.cpf)}`);
+    setActiveSuggest(null);
+  };
 
   const set = (field: string, value: string) => setForm(prev => ({ ...prev, [field]: value }));
 
@@ -181,7 +229,7 @@ export const ComissionamentoFormDialog: React.FC<Props> = ({ open, onClose, onSu
     setActiveSuggest(null);
   };
 
-    const handleValorChange = (raw: string) => {
+  const handleValorChange = (raw: string) => {
     const digits = extractDigits(raw);
     set('valor', digits);
     setValorDisplay(fmtCurrencyDisplay(digits));
@@ -290,6 +338,32 @@ export const ComissionamentoFormDialog: React.FC<Props> = ({ open, onClose, onSu
         ) : (
           <>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 py-4">
+              <div className="space-y-1 md:col-span-2 relative" ref={activeSuggest === 'cpf_cadastro' ? suggestRef : undefined}>
+                <Label className="text-sm font-medium">Buscar cadastrado (CPF / Nome)</Label>
+                <Input
+                  placeholder="Digite CPF ou nome cadastrado em registros_dados"
+                  value={cpfQuery}
+                  onChange={e => { setCpfQuery(e.target.value); setActiveSuggest('cpf_cadastro'); }}
+                  onFocus={() => setActiveSuggest('cpf_cadastro')}
+                  autoComplete="off"
+                />
+                {activeSuggest === 'cpf_cadastro' && cpfSuggestions.length > 0 && (
+                  <div className="absolute z-50 top-full left-0 right-0 mt-1 bg-popover border border-border rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                    {cpfSuggestions.map((r) => (
+                      <button
+                        key={r.id}
+                        type="button"
+                        onClick={() => applyRegistro(r)}
+                        className="w-full text-left px-3 py-2 hover:bg-accent text-sm border-b border-border last:border-0"
+                      >
+                        <div className="font-medium text-foreground">{r.nome}</div>
+                        <div className="text-xs text-muted-foreground">CPF: {formatCpf(r.cpf)} {r.setor ? `· ${r.setor}` : ''}</div>
+                      </button>
+                    ))}
+                  </div>
+                )}
+                <p className="text-xs text-muted-foreground">Preenche automaticamente Favorecido e Chave PIX (CPF).</p>
+              </div>
               <div className="space-y-1">
                 <Label className="text-sm font-medium">Data Para Pagamento*</Label>
                 <Input type="date" value={form.data_lancamento} onChange={e => set('data_lancamento', e.target.value)} />
@@ -311,7 +385,7 @@ export const ComissionamentoFormDialog: React.FC<Props> = ({ open, onClose, onSu
 
               <div className="space-y-1">
                 <Label className="text-sm font-medium">Valor *</Label>
-                  <Input
+                <Input
                   placeholder="R$ 0,00"
                   inputMode="decimal"
                   value={valorDisplay}

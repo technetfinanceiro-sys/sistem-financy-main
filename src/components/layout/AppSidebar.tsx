@@ -1,7 +1,7 @@
 import React from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import {
-    DollarSign, Wallet, BarChart3, PieChart, Layers, Table as TableIcon, Coins, ChevronDown, Settings,
+    DollarSign, Wallet, BarChart3, PieChart, Layers, Table as TableIcon, Coins, ChevronDown, Settings, FileBarChart,
 } from 'lucide-react';
 import {
     Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel,
@@ -116,6 +116,20 @@ export const AppSidebar: React.FC = () => {
                         <SidebarMenu>
                             {renderModule('/comissionamento', 'Solicitação de Pagamento', DollarSign, COMISSIONAMENTO_TABS)}
                             {isAdmin && renderModule('/folha-pagamento', 'Folha de Pagamento', Wallet, FOLHA_TABS)}
+                            {isAdmin && (
+                                <SidebarMenuItem>
+                                    <SidebarMenuButton
+                                        asChild
+                                        isActive={pathname === '/dre-consolidado'}
+                                        className="data-[active=true]:bg-primary data-[active=true]:text-primary-foreground"
+                                    >
+                                        <NavLink to="/dre-consolidado">
+                                            <FileBarChart className="h-4 w-4 flex-shrink-0" />
+                                            {!collapsed && <span className="text-[13px]">DRE Consolidado</span>}
+                                        </NavLink>
+                                    </SidebarMenuButton>
+                                </SidebarMenuItem>
+                            )}
                             {isAdmin && (
                                 <SidebarMenuItem>
                                     <SidebarMenuButton

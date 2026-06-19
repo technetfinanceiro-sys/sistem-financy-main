@@ -14,6 +14,7 @@ import NotFound from "./pages/NotFound";
 import Perfil from "./pages/Perfil";
 import FolhaPagamento from "./pages/FolhaPagamento";
 import ResetPassword from "./pages/ResetPassword";
+import DREConsolidado from "./pages/DREConsolidado";
 
 const queryClient = new QueryClient();
 
@@ -53,6 +54,14 @@ const App = () => (
                   element={
                     <ProtectedRoute requireAdmin>
                       <FolhaPagamento />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/dre-consolidado"
+                  element={
+                    <ProtectedRoute requireAdmin>
+                      <DREConsolidado />
                     </ProtectedRoute>
                   }
                 />
