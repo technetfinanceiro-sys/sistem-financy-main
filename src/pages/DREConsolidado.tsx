@@ -19,6 +19,14 @@ interface LinhaDRE {
 
 const fmtBRL = (n: number) =>
     (n || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+const fmtMesAno = (dateStr: string) => {
+    if (!dateStr) return '-';
+    const d = new Date(dateStr + 'T00:00:00');
+    if (isNaN(d.getTime())) return '-';
+    const mes = d.toLocaleDateString('pt-BR', { month: 'long' });
+    const ano = d.toLocaleDateString('pt-BR', { year: '2-digit' });
+    return `${mes.charAt(0).toUpperCase()}${mes.slice(1)}/${ano}`;
+};
 
 interface MultiSelectProps {
     label: string;
@@ -151,6 +159,12 @@ const DREConsolidado: React.FC = () => {
         folha: DadoFinanceiro[];
     };
 
+    const periodoDoGrupo = (a: Grupo) => {
+        if (a.pix.length > 0) return fmtMesAno(a.pix[0].data_lancamento || '');
+        if (a.folha.length > 0) return fmtMesAno(a.folha[0].data || '');
+        return '-';
+    };
+
     const agrupado = useMemo<Grupo[]>(() => {
         const map = new Map<string, Grupo>();
         filtrados.pix.forEach(r => {
@@ -191,6 +205,7 @@ const DREConsolidado: React.FC = () => {
             Origem: a.origem,
             Local: a.local,
             Serviço: a.servico,
+            Período: periodoDoGrupo(a),
             'Qtd Lançamentos': a.qtd,
             Valor: a.valor,
         }));
@@ -204,36 +219,38 @@ const DREConsolidado: React.FC = () => {
         if (agrupado.length === 0) return alert('Sem dados.');
 
         const linhasDRE: any[] = [];
-        linhasDRE.push({ Descrição: 'DRE CONSOLIDADO', Valor: '' });
-        linhasDRE.push({ Descrição: `Período: ${dataInicio || '—'} a ${dataFim || '—'}`, Valor: '' });
-        if (setores.length) linhasDRE.push({ Descrição: `Setores: ${setores.join(', ')}`, Valor: '' });
-        if (servicos.length) linhasDRE.push({ Descrição: `Serviços: ${servicos.join(', ')}`, Valor: '' });
-        linhasDRE.push({});
+        linhasDRE.push({ Descrição: 'DRE CONSOLIDADO', Valor: '', Período: '' });
+        linhasDRE.push({ Descrição: `Período: ${dataInicio || '—'} a ${dataFim || '—'}`, Valor: '', Período: '' });
+        if (setores.length) linhasDRE.push({ Descrição: `Setores: ${setores.join(', ')}`, Valor: '', Período: '' });
+        if (servicos.length) linhasDRE.push({ Descrição: `Serviços: ${servicos.join(', ')}`, Valor: '', Período: '' });
+        linhasDRE.push({ Descrição: '', Valor: '', Período: '' });
 
         // PIX por categoria/local
-        linhasDRE.push({ Descrição: '(-) PAGAMENTOS PIX (Comissionamento)', Valor: -totais.pix });
+        linhasDRE.push({ Descrição: '(-) PAGAMENTOS PIX (Comissionamento)', Valor: '', Período: '' });
         agrupado
             .filter(a => a.origem === 'PIX')
             .forEach(a => linhasDRE.push({
                 Descrição: `   ${a.local} - ${a.servico}`,
                 Valor: -a.valor,
+                Período: periodoDoGrupo(a),
             }));
-        linhasDRE.push({});
+        linhasDRE.push({ Descrição: '', Valor: '', Período: '' });
 
         // Folha por setor
-        linhasDRE.push({ Descrição: '(-) FOLHA DE PAGAMENTO (Salários por Setor)', Valor: -totais.folha });
+        linhasDRE.push({ Descrição: '(-) FOLHA DE PAGAMENTO (Salários por Setor)', Valor: '', Período: '' });
         agrupado
             .filter(a => a.origem === 'Folha')
             .forEach(a => linhasDRE.push({
                 Descrição: `   ${a.local} - Salários`,
                 Valor: -a.valor,
+                Período: periodoDoGrupo(a),
             }));
-        linhasDRE.push({});
+        linhasDRE.push({ Descrição: '', Valor: '', Período: '' });
 
-        linhasDRE.push({ Descrição: 'TOTAL DESPESAS', Valor: -totais.total });
+        linhasDRE.push({ Descrição: 'TOTAL DESPESAS', Valor: -totais.total, Período: '' });
 
-        const ws = XLSX.utils.json_to_sheet(linhasDRE, { header: ['Descrição', 'Valor'] });
-        ws['!cols'] = [{ wch: 60 }, { wch: 20 }];
+        const ws = XLSX.utils.json_to_sheet(linhasDRE, { header: ['Descrição', 'Valor', 'Período'] });
+        ws['!cols'] = [{ wch: 60 }, { wch: 20 }, { wch: 15 }];
         const wb = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(wb, ws, 'DRE');
         XLSX.writeFile(wb, `DRE_${new Date().toISOString().slice(0, 10)}.xlsx`);
@@ -336,6 +353,7 @@ const DREConsolidado: React.FC = () => {
                                             <th className="py-2 px-2">Origem</th>
                                             <th className="py-2 px-2">Local / Setor</th>
                                             <th className="py-2 px-2">Serviço</th>
+                                            <th className="py-2 px-2">Período</th>
                                             <th className="py-2 px-2 text-right">Qtd</th>
                                             <th className="py-2 px-2 text-right">Valor</th>
                                         </tr>
@@ -357,18 +375,19 @@ const DREConsolidado: React.FC = () => {
                                                 </td>
                                                 <td className="py-2 px-2 font-medium text-foreground">{a.local}</td>
                                                 <td className="py-2 px-2 text-foreground">{a.servico}</td>
+                                                <td className="py-2 px-2 text-foreground">{periodoDoGrupo(a)}</td>
                                                 <td className="py-2 px-2 text-right text-primary underline-offset-2 hover:underline">{a.qtd}</td>
                                                 <td className="py-2 px-2 text-right font-semibold text-foreground">{fmtBRL(a.valor)}</td>
                                             </tr>
                                         ))}
                                         {agrupado.length === 0 && (
-                                            <tr><td colSpan={5} className="py-6 text-center text-muted-foreground">Sem dados no período.</td></tr>
+                                            <tr><td colSpan={6} className="py-6 text-center text-muted-foreground">Sem dados no período.</td></tr>
                                         )}
                                     </tbody>
                                     {agrupado.length > 0 && (
                                         <tfoot>
                                             <tr className="border-t-2 border-border font-bold">
-                                                <td colSpan={4} className="py-3 px-2 text-right">TOTAL</td>
+                                                <td colSpan={5} className="py-3 px-2 text-right">TOTAL</td>
                                                 <td className="py-3 px-2 text-right text-primary">{fmtBRL(totais.total)}</td>
                                             </tr>
                                         </tfoot>
@@ -401,7 +420,7 @@ const DREConsolidado: React.FC = () => {
                                 <tbody>
                                     {detalhe.pix.map((r, i) => (
                                         <tr key={i} className="border-t border-border/40">
-                                            <td className="px-2 py-1.5 whitespace-nowrap">{r.data_lancamento ? r.data_lancamento.split('-').reverse().join('/') : '-'}</td>
+                                            <td className="px-2 py-1.5 whitespace-nowrap">{fmtMesAno(r.data_lancamento || '')}</td>
                                             <td className="px-2 py-1.5">{r.favorecido}</td>
                                             <td className="px-2 py-1.5">{r.descricao || '-'}</td>
                                             <td className="px-2 py-1.5">{r.centro_de_custo || '-'}</td>
@@ -435,7 +454,7 @@ const DREConsolidado: React.FC = () => {
                                 <tbody>
                                     {detalhe.folha.map((r, i) => (
                                         <tr key={i} className="border-t border-border/40">
-                                            <td className="px-2 py-1.5 whitespace-nowrap">{r.data ? r.data.split('-').reverse().join('/') : '-'}</td>
+                                            <td className="px-2 py-1.5 whitespace-nowrap">{fmtMesAno(r.data || '')}</td>
                                             <td className="px-2 py-1.5">{r.nome}</td>
                                             <td className="px-2 py-1.5">{r.cpf}</td>
                                             <td className="px-2 py-1.5">{r.setor || '-'}</td>
