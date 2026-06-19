@@ -253,6 +253,48 @@ const DREConsolidado: React.FC = () => {
         ws['!cols'] = [{ wch: 60 }, { wch: 20 }, { wch: 15 }];
         const wb = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(wb, ws, 'DRE');
+        // Aba: Detalhamento Folha (com verbas)
+        const verbaCols: { label: string; field: keyof DadoFinanceiro }[] = [
+            { label: 'Férias', field: 'ferias' },
+            { label: '13° Salário', field: 'decimo_terceiro' },
+            { label: 'Periculosidade', field: 'periculosidade' },
+            { label: 'Hora extra 50%', field: 'hora_extra_50' },
+            { label: 'Hora extra 60%', field: 'hora_extra_60' },
+            { label: 'Hora extra 70%', field: 'hora_extra_70' },
+            { label: 'Hora extra 100%', field: 'hora_extra_100' },
+            { label: 'DSR', field: 'dsr' },
+            { label: 'Sal. Maternidade', field: 'sal_maternidade' },
+            { label: 'Vale transporte', field: 'vale_transporte' },
+            { label: 'Desc plano saúde', field: 'desc_plano_saude' },
+            { label: 'Desc odonto', field: 'desc_odonto' },
+            { label: 'Desc faltas', field: 'desc_faltas' },
+            { label: 'Desc adiantamento', field: 'desc_adiantamento' },
+            { label: 'Contribuição', field: 'contribuicao' },
+            { label: 'Desc Pensão', field: 'desc_pensao' },
+            { label: 'Dif. Salário', field: 'dif_salario' },
+            { label: 'Empréstimo', field: 'emprestimo' },
+            { label: 'Desc fardamento', field: 'desc_fardamento' },
+        ];
+
+        if (filtrados.fol.length > 0) {
+            const detRows = filtrados.fol.map(r => {
+                const row: Record<string, any> = {
+                    Data: fmtMesAno(r.data || ''),
+                    Nome: r.nome,
+                    CPF: r.cpf,
+                    Setor: r.setor || '',
+                    Proventos: Number(r.total_proventos) || 0,
+                    Descontos: Number(r.total_descontos) || 0,
+                    Líquido: Number(r.salario_liquido) || 0,
+                };
+                verbaCols.forEach(v => { row[v.label] = Number(r[v.field]) || 0; });
+                return row;
+            });
+            const header = ['Data', 'Nome', 'CPF', 'Setor', 'Proventos', 'Descontos', 'Líquido', ...verbaCols.map(v => v.label)];
+            const ws2 = XLSX.utils.json_to_sheet(detRows, { header });
+            ws2['!cols'] = header.map(h => ({ wch: h === 'Nome' ? 30 : h === 'Setor' ? 25 : 15 }));
+            XLSX.utils.book_append_sheet(wb, ws2, 'Detalhamento Folha');
+        }
         XLSX.writeFile(wb, `DRE_${new Date().toISOString().slice(0, 10)}.xlsx`);
     };
 
